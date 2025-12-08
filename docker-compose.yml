@@ -1,0 +1,6 @@
+services:
+  authservice:
+    image: ${DOCKER_REGISTRY-}authservice
+    build:
+      context: .
+      dockerfile: Auth Service/Dockerfile
