@@ -1,5 +1,5 @@
 
-namespace Catalog_Service
+namespace Audit_Service
 {
     public class Program
     {
@@ -27,7 +27,7 @@ namespace Catalog_Service
 
             app.UseAuthorization();
 
-
+            
             app.Run();
         }
     }
