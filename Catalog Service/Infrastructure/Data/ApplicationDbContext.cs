@@ -1,9 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using BuildingBlocks.SharedEntities;
 using Catalog_Service.Entities;
-using BuildingBlocks.SharedEntities;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
-using System;
+using MassTransit;
 
 namespace Catalog_Service.Infrastructure.Data
 {
@@ -32,6 +34,13 @@ namespace Catalog_Service.Infrastructure.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            // =========================================================
+            // 🚌 MassTransit Outbox Configuration (ADD THIS BLOCK)
+            // =========================================================
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
+            // =========================================================
 
             // =========================================================
             // 🔗 Relationships & Keys Configuration
