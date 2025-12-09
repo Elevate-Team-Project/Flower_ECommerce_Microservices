@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Catalog_Service.Entities;
-using BuildingBlocks.SharedEntities; // Assuming BaseEntity is here
+using BuildingBlocks.SharedEntities;
 using System.Threading;
 using System.Threading.Tasks;
 using System;
@@ -14,7 +14,7 @@ namespace Catalog_Service.Infrastructure.Data
         }
 
         // =========================================================
-        // 📦 DbSets (Based on your Solution Explorer)
+        // 📦 DbSets
         // =========================================================
         public DbSet<Product> Products { get; set; }
         public DbSet<Category> Categories { get; set; }
@@ -24,6 +24,7 @@ namespace Catalog_Service.Infrastructure.Data
         public DbSet<ProductReview> ProductReviews { get; set; }
         public DbSet<PriceHistory> PriceHistories { get; set; }
         public DbSet<StockAlert> StockAlerts { get; set; }
+        public DbSet<ProductSpecification> ProductSpecifications { get; set; }
 
         // Join Table
         public DbSet<ProductOccasion> ProductOccasions { get; set; }
@@ -37,46 +38,45 @@ namespace Catalog_Service.Infrastructure.Data
             // =========================================================
 
             // 1. Configure ProductOccasion (Many-to-Many Join Table)
-            // Defining Composite Key
             modelBuilder.Entity<ProductOccasion>()
                 .HasKey(po => new { po.ProductId, po.OccasionId });
 
             modelBuilder.Entity<ProductOccasion>()
                 .HasOne(po => po.Product)
                 .WithMany(p => p.ProductOccasions)
-                .HasForeignKey(po => po.ProductId);
+                .HasForeignKey(po => po.ProductId)
+                .IsRequired(false); // ✅ FIX: Allow navigation to be null if Product is Soft Deleted
 
             modelBuilder.Entity<ProductOccasion>()
                 .HasOne(po => po.Occasion)
                 .WithMany(o => o.ProductOccasions)
-                .HasForeignKey(po => po.OccasionId);
+                .HasForeignKey(po => po.OccasionId)
+                .IsRequired(false); // ✅ FIX: Allow navigation to be null if Occasion is Soft Deleted
 
-            // 2. Configure Category (Self-Referencing Relationship)
-            // Handling Parent and Sub-categories
+            // 2. Configure Category (Self-Referencing)
             modelBuilder.Entity<Category>()
                 .HasOne(c => c.ParentCategory)
                 .WithMany(c => c.SubCategories)
                 .HasForeignKey(c => c.ParentCategoryId)
-                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting a parent if it has children
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // 3. Configure Decimal Precision (Best Practice for Prices)
-            // Explicitly defining precision to avoid EF Core warnings
-            modelBuilder.Entity<Product>()
-                .Property(p => p.Price)
-                .HasColumnType("decimal(18,2)");
+            // 3. Configure ProductSpecification (1-to-Many)
+            // ✅ FIX: Explicitly configure this to handle the relationship warning
+            modelBuilder.Entity<ProductSpecification>()
+                .HasOne(ps => ps.Product)
+                .WithMany(p => p.Specifications)
+                .HasForeignKey(ps => ps.ProductId);
 
-            modelBuilder.Entity<PriceHistory>()
-                .Property(ph => ph.OldPrice)
-                .HasColumnType("decimal(18,2)");
-
-            modelBuilder.Entity<PriceHistory>()
-                .Property(ph => ph.NewPrice)
-                .HasColumnType("decimal(18,2)");
+            // 4. Configure Decimal Precision
+            modelBuilder.Entity<Product>().Property(p => p.Price).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<PriceHistory>().Property(ph => ph.OldPrice).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<PriceHistory>().Property(ph => ph.NewPrice).HasColumnType("decimal(18,2)");
 
             // =========================================================
             // 🗑️ Global Query Filter (Soft Delete)
             // =========================================================
-            // Automatically exclude deleted items (IsDeleted = true) from all queries
+
+            // Entities with Soft Delete
             modelBuilder.Entity<Product>().HasQueryFilter(e => !e.IsDeleted);
             modelBuilder.Entity<Category>().HasQueryFilter(e => !e.IsDeleted);
             modelBuilder.Entity<Brand>().HasQueryFilter(e => !e.IsDeleted);
@@ -86,13 +86,13 @@ namespace Catalog_Service.Infrastructure.Data
             modelBuilder.Entity<PriceHistory>().HasQueryFilter(e => !e.IsDeleted);
             modelBuilder.Entity<StockAlert>().HasQueryFilter(e => !e.IsDeleted);
 
-            // Note: Join tables like ProductOccasion usually don't inherit BaseEntity.
-            // If you made them inherit BaseEntity, uncomment the line below:
-            // modelBuilder.Entity<ProductOccasion>().HasQueryFilter(e => !e.IsDeleted);
+            // ✅ FIX: Added ProductSpecification to Query Filter
+            // This resolves the warning for Product <-> ProductSpecification
+            modelBuilder.Entity<ProductSpecification>().HasQueryFilter(e => !e.IsDeleted);
         }
 
         // =========================================================
-        // 💾 SaveChanges Interceptor (For Auditing & Soft Delete)
+        // 💾 SaveChanges Interceptor
         // =========================================================
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -105,7 +105,6 @@ namespace Catalog_Service.Infrastructure.Data
             var entries = ChangeTracker.Entries();
             foreach (var entry in entries)
             {
-                // Logic applies to any class inheriting from BaseEntity
                 if (entry.Entity is BaseEntity baseEntity)
                 {
                     switch (entry.State)
@@ -120,8 +119,8 @@ namespace Catalog_Service.Infrastructure.Data
                             break;
 
                         case EntityState.Deleted:
-                            entry.State = EntityState.Modified; // Convert Hard Delete to Update
-                            baseEntity.IsDeleted = true;        // Soft Delete
+                            entry.State = EntityState.Modified;
+                            baseEntity.IsDeleted = true;
                             baseEntity.DeletedAt = DateTime.UtcNow;
                             break;
                     }

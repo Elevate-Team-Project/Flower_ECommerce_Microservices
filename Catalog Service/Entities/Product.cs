@@ -24,5 +24,7 @@ namespace Catalog_Service.Entities
         public virtual ICollection<ProductImage> Images { get; set; }
         public virtual ICollection<ProductSpecification> Specifications { get; set; }
         public virtual ICollection<ProductOccasion> ProductOccasions { get; set; }
+        public virtual ICollection<ProductReview> Reviews { get; set; }
+        public virtual ICollection<PriceHistory> PriceHistories { get; set; }
     }
 }

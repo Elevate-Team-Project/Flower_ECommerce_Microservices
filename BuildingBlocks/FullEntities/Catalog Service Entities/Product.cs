@@ -1,4 +1,5 @@
-﻿using BuildingBlocks.SharedEntities;
+﻿using BuildingBlocks.FullEntities.Catalog_Service_Entities.Occasions;
+using BuildingBlocks.SharedEntities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,3 +26,4 @@ namespace BuildingBlocks.FullEntities.Catalog_Service_Entities
         public virtual ICollection<ProductReview> Reviews { get; set; }
         public virtual ICollection<ProductOccasion> ProductOccasions { get; set; }
     }
+}

@@ -1,4 +1,8 @@
-﻿namespace Catalog_Service.Infrastructure.UnitOfWork
+﻿using BuildingBlocks.Interfaces;
+using Catalog_Service.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore.Storage;
+
+namespace Catalog_Service.Infrastructure.UnitOfWork
 {
     public class UnitOfWork : IUnitOfWork
     {

@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="8.8.0" />
     <PackageReference Include="FluentValidation" Version="12.1.0" />
     <PackageReference Include="LinqKit.Microsoft.EntityFrameworkCore" Version="8.1.6" />
     <PackageReference Include="MassTransit.EntityFrameworkCore" Version="8.0.9" />
