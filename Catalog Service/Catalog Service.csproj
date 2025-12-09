@@ -40,7 +40,6 @@
     <Folder Include="MiddleWares\" />
     <Folder Include="Features\" />
     <Folder Include="Contracts\" />
-    <Folder Include="Entities\" />
   </ItemGroup>
 
   <ItemGroup>
