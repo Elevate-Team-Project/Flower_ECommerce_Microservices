@@ -242,7 +242,6 @@ namespace Catalog_Service
             {
                 Log.CloseAndFlush();
             }
-            //tst
         }
     }
 }
