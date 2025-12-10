@@ -1,9 +1,11 @@
 using BuildingBlocks.Interfaces;
+using BuildingBlocks.MiddleWares; // Ensure you have this namespace/folder
 using BuildingBlocks.SharedEntities;
 using Catalog_Service.Entities;
+using Catalog_Service.Features.CategoriesFeature.UpdateCategoryStatus;
 using Catalog_Service.Infrastructure;
 using Catalog_Service.Infrastructure.Data;
-using BuildingBlocks.MiddleWares; // Ensure you have this namespace/folder
+using Catalog_Service.Infrastructure.UnitOfWork;
 using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -56,7 +58,7 @@ namespace Catalog_Service
                 // Ensure you have these classes created in your project or referencing BuildingBlocks
                 // builder.Services.AddScoped<ICurrentUserService, CurrentUserService>(); 
                 // builder.Services.AddScoped<TransactionMiddleware>(); 
-                // builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+                 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
                 // Configure Entity Framework Core with SQL Server
                 builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
@@ -231,6 +233,9 @@ namespace Catalog_Service
                 // Temporary endpoints until you add Features/Endpoints
                 app.MapGet("/", () => "Catalog Service is running.");
                 app.MapGet("/Brands", async (IBaseRepository<Brand> BrandRepo) => Results.Ok(await BrandRepo.GetAll().ToListAsync()));
+
+                app.MapCategoryStatusEndpoints();
+
 
                 await app.RunAsync();
             }
