@@ -1,6 +1,7 @@
-﻿namespace Catalog_Service.Features.CategoriesFeature.CreateCategory
+﻿using MediatR;
+
+namespace Catalog_Service.Features.CategoriesFeature.CreateCategory
 {
-    public class Handlers
-    {
-    }
+    public record CreateCategoryCommand(CreateCategoryDto cat) : IRequest<int>;
+
 }

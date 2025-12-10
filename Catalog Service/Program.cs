@@ -14,6 +14,7 @@ using Serilog;
 using Serilog.Events;
 using System.Reflection;
 using System.Text;
+using Catalog_Service.Features.CategoriesFeature.CreateCategory;
 
 namespace Catalog_Service
 {
@@ -230,6 +231,7 @@ namespace Catalog_Service
 
                 // Temporary endpoints until you add Features/Endpoints
                 app.MapGet("/", () => "Catalog Service is running.");
+                app.MapCategoryEndpoints();
                 app.MapGet("/Brands", async (IBaseRepository<Brand> BrandRepo) => Results.Ok(await BrandRepo.GetAll().ToListAsync()));
 
                 await app.RunAsync();
