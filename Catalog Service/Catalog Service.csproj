@@ -40,8 +40,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Features\BrandsFeature\GetAllBrands\" />
     <Folder Include="MiddleWares\" />
-    <Folder Include="Features\" />
     <Folder Include="Contracts\" />
   </ItemGroup>
 
