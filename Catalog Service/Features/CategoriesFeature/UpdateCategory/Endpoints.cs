@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Catalog_Service.Features.Shared;
+using MediatR;
 
 namespace Catalog_Service.Features.CategoriesFeature.UpdateCategory
 {
@@ -12,9 +13,22 @@ namespace Catalog_Service.Features.CategoriesFeature.UpdateCategory
                 IMediator mediator) =>
             {
                 var result = await mediator.Send(new UpdateCategoryCommand(id, dto));
-                return Results.Ok(result);
+
+                if (!result.IsSuccess)
+                {
+                    return EndpointResponse<RequestResponse<bool>>.ErrorResponse(
+                        result.Message,
+                        statusCode: 400
+                    );
+                }
+
+                return EndpointResponse<RequestResponse<bool>>.SuccessResponse(
+                    result,
+                    "Category updated successfully",
+                    statusCode: 200
+                );
             })
-                //.RequireAuthorization("Admin")
+            //.RequireAuthorization("Admin")
             .WithName("UpdateCategory")
             .WithSummary("Update an existing category")
             .WithDescription("Allows admin to update name, image, and parent category.");

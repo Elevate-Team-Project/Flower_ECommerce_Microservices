@@ -1,10 +1,11 @@
 ﻿using BuildingBlocks.Interfaces;
 using Catalog_Service.Entities;
+using Catalog_Service.Features.Shared;
 using MediatR;
 
 namespace Catalog_Service.Features.CategoriesFeature.UpdateCategory
 {
-    public class Handlers : IRequestHandler<UpdateCategoryCommand, UpdateCategoryDto>
+    public class Handlers : IRequestHandler<UpdateCategoryCommand, RequestResponse<bool>>
     {
         private readonly IBaseRepository<Category> _categoryRepository;
         private readonly IUnitOfWork _unitOfWork;
@@ -15,43 +16,44 @@ namespace Catalog_Service.Features.CategoriesFeature.UpdateCategory
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<UpdateCategoryDto> Handle(UpdateCategoryCommand request, CancellationToken cancellationToken)
+        public async Task<RequestResponse<bool>> Handle(UpdateCategoryCommand request, CancellationToken cancellationToken)
         {
-            var dto = request.Dto;
-
-            var category = await _categoryRepository.GetByIdAsync(request.Id);
-            if (category == null)
-                throw new Exception("Category not found");
-
-         
-            var exists = _categoryRepository
-                .Get(c => c.Name == dto.Name && c.Id != request.Id)
-                .Any();
-
-            if (exists)
-                throw new Exception("Category name already exists");
-
-            category.Name = dto.Name;
-            category.ImageUrl = dto.ImageUrl;
-            category.ParentCategoryId = dto.ParentCategoryId;
-            category.UpdatedAt = DateTime.UtcNow;
-
-            _categoryRepository.SaveInclude(
-                category,
-                nameof(Category.Name),
-                nameof(Category.ImageUrl),
-                nameof(Category.ParentCategoryId),
-                nameof(Category.UpdatedAt)
-            );
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return new UpdateCategoryDto
+            try
             {
-                Name = category.Name,
-                ImageUrl = category.ImageUrl,
-                ParentCategoryId = category.ParentCategoryId
-            };
+                var dto = request.Dto;
+
+                var category = await _categoryRepository.GetByIdAsync(request.Id);
+                if (category == null)
+                    return RequestResponse<bool>.Fail("Category not found");
+
+                var exists = _categoryRepository
+                    .Get(c => c.Name == dto.Name && c.Id != request.Id)
+                    .Any();
+
+                if (exists)
+                    return RequestResponse<bool>.Fail("Category name already exists");
+
+                category.Name = dto.Name;
+                category.ImageUrl = dto.ImageUrl;
+                category.ParentCategoryId = dto.ParentCategoryId;
+                category.UpdatedAt = DateTime.UtcNow;
+
+                _categoryRepository.SaveInclude(
+                    category,
+                    nameof(Category.Name),
+                    nameof(Category.ImageUrl),
+                    nameof(Category.ParentCategoryId),
+                    nameof(Category.UpdatedAt)
+                );
+
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                return RequestResponse<bool>.Success(true, "Category updated successfully");
+            }
+            catch (Exception ex)
+            {
+                return RequestResponse<bool>.Fail(ex.Message);
+            }
         }
     }
 }
