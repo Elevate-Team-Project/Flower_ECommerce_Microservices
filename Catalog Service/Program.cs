@@ -2,7 +2,7 @@ using BuildingBlocks.Interfaces;
 using BuildingBlocks.MiddleWares; // Ensure you have this namespace/folder
 using BuildingBlocks.SharedEntities;
 using Catalog_Service.Entities;
-using Catalog_Service.Features.CategoriesFeature.UpdateCategoryStatus;
+using Catalog_Service.Features.CategoriesFeature.UpdateCategory;
 using Catalog_Service.Infrastructure;
 using Catalog_Service.Infrastructure.Data;
 using Catalog_Service.Infrastructure.UnitOfWork;
@@ -233,6 +233,7 @@ namespace Catalog_Service
                 // Temporary endpoints until you add Features/Endpoints
                 app.MapGet("/", () => "Catalog Service is running.");
                 app.MapGet("/Brands", async (IBaseRepository<Brand> BrandRepo) => Results.Ok(await BrandRepo.GetAll().ToListAsync()));
+                app.MapUpdateCategoryEndpoints();
 
                 app.MapCategoryStatusEndpoints();
 
