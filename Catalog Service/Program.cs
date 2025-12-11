@@ -235,6 +235,9 @@ namespace Catalog_Service
                 app.MapGet("/Brands", async (IBaseRepository<Brand> BrandRepo) => Results.Ok(await BrandRepo.GetAll().ToListAsync()));
                 app.MapUpdateCategoryEndpoints();
 
+                app.MapCategoryStatusEndpoints();
+
+
                 await app.RunAsync();
             }
             catch (Exception ex)
