@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Catalog_Service.Features.Shared;
+using MediatR;
 
 namespace Catalog_Service.Features.OccasionsFeature.CreateOccasion
 {
@@ -10,9 +11,21 @@ namespace Catalog_Service.Features.OccasionsFeature.CreateOccasion
                 CreateOccasionDto dto,
                 IMediator mediator) =>
             {
-                var command = new CreateOccasionCommand(dto);
-                var result = await mediator.Send(command);
-                return Results.Created($"/api/occasions/{result.Name}", result);
+                var result = await mediator.Send(new CreateOccasionCommand(dto));
+
+                if (!result.IsSuccess)
+                {
+                    return EndpointResponse<RequestResponse<CreateOccasionDto>>.ErrorResponse(
+                        result.Message,
+                        400
+                    );
+                }
+
+                return EndpointResponse<RequestResponse<CreateOccasionDto>>.SuccessResponse(
+                    result,
+                    "Occasion created successfully",
+                    201
+                );
             })
             //.RequireAuthorization("Admin")
             .WithSummary("Create a new occasion")
