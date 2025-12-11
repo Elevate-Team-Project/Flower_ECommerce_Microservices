@@ -3,6 +3,8 @@ using BuildingBlocks.SharedEntities;
 using Catalog_Service.Entities;
 using Catalog_Service.Infrastructure;
 using Catalog_Service.Infrastructure.Data;
+using Catalog_Service.Infrastructure.UnitOfWork;
+using Catalog_Service.Features.CategoriesFeature.DeleteCategory;
 using BuildingBlocks.MiddleWares; // Ensure you have this namespace/folder
 using MassTransit;
 using MediatR;
@@ -56,7 +58,7 @@ namespace Catalog_Service
                 // Ensure you have these classes created in your project or referencing BuildingBlocks
                 // builder.Services.AddScoped<ICurrentUserService, CurrentUserService>(); 
                 // builder.Services.AddScoped<TransactionMiddleware>(); 
-                // builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+                builder.Services.AddScoped<IUnitOfWork, Catalog_Service.Infrastructure.UnitOfWork.UnitOfWork>();
 
                 // Configure Entity Framework Core with SQL Server
                 builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
@@ -225,8 +227,8 @@ namespace Catalog_Service
                 // Uncomment once you have the Middleware class
                 // app.UseMiddleware<TransactionMiddleware>();
 
-                // Ensure you have an Extension method for MapAllEndpoints or use Controllers
-                // app.MapAllEndpoints(); 
+                // Feature endpoints
+                Endpoints.MapDeleteCategoryEndpoints(app);
 
                 // Temporary endpoints until you add Features/Endpoints
                 app.MapGet("/", () => "Catalog Service is running.");
