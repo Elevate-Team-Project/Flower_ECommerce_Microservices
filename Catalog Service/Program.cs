@@ -233,6 +233,10 @@ namespace Catalog_Service
                 // Temporary endpoints until you add Features/Endpoints
                 app.MapGet("/", () => "Catalog Service is running.");
                 app.MapGet("/Brands", async (IBaseRepository<Brand> BrandRepo) => Results.Ok(await BrandRepo.GetAll().ToListAsync()));
+                app.MapUpdateCategoryEndpoints();
+
+                app.MapCategoryStatusEndpoints();
+
 
 
                 app.MapCreateOccasionEndpoints();
