@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Catalog_Service.Features.Shared;
+using MediatR;
 
 namespace Catalog_Service.Features.CategoriesFeature.UpdateCategoryStatus
 {
@@ -12,12 +13,19 @@ namespace Catalog_Service.Features.CategoriesFeature.UpdateCategoryStatus
                 IMediator mediator) =>
             {
                 var result = await mediator.Send(new ActivateCategoryCommand(id));
-                return Results.Ok(new { Success = result, IsActive = true });
+
+                if (!result.IsSuccess)
+                    return EndpointResponse<RequestResponse<bool>>.ErrorResponse(result.Message, 400);
+
+                return EndpointResponse<RequestResponse<bool>>.SuccessResponse(
+                    result,
+                    "Category activated successfully",
+                    200
+                );
             })
-           // .RequireAuthorization("Admin")
+            //.RequireAuthorization("Admin")
             .WithSummary("Activate a category")
             .WithDescription("Marks a category as active.");
-
             #endregion
 
             #region Deactivate
@@ -27,12 +35,19 @@ namespace Catalog_Service.Features.CategoriesFeature.UpdateCategoryStatus
                 IMediator mediator) =>
             {
                 var result = await mediator.Send(new DeactivateCategoryCommand(id));
-                return Results.Ok(new { Success = result, IsActive = false });
+
+                if (!result.IsSuccess)
+                    return EndpointResponse<RequestResponse<bool>>.ErrorResponse(result.Message, 400);
+
+                return EndpointResponse<RequestResponse<bool>>.SuccessResponse(
+                    result,
+                    "Category deactivated successfully",
+                    200
+                );
             })
-           // .RequireAuthorization("Admin")
+            //.RequireAuthorization("Admin")
             .WithSummary("Deactivate a category")
             .WithDescription("Marks a category as inactive.");
-
             #endregion
         }
     }

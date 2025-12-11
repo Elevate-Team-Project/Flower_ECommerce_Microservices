@@ -1,10 +1,11 @@
 ﻿using BuildingBlocks.Interfaces;
 using Catalog_Service.Entities;
+using Catalog_Service.Features.Shared;
 using MediatR;
 
 namespace Catalog_Service.Features.CategoriesFeature.UpdateCategoryStatus
 {
-    public class ActivateCategoryHandler : IRequestHandler<ActivateCategoryCommand, bool>
+    public class ActivateCategoryHandler : IRequestHandler<ActivateCategoryCommand, RequestResponse<bool>>
     {
         private readonly IBaseRepository<Category> _repo;
         private readonly IUnitOfWork _unitOfWork;
@@ -15,11 +16,11 @@ namespace Catalog_Service.Features.CategoriesFeature.UpdateCategoryStatus
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<bool> Handle(ActivateCategoryCommand request, CancellationToken cancellationToken)
+        public async Task<RequestResponse<bool>> Handle(ActivateCategoryCommand request, CancellationToken cancellationToken)
         {
             var category = await _repo.GetByIdAsync(request.Id);
             if (category == null)
-                throw new Exception("Category not found");
+                return RequestResponse<bool>.Fail("Category not found");
 
             category.IsActive = true;
             category.UpdatedAt = DateTime.UtcNow;
@@ -32,7 +33,7 @@ namespace Catalog_Service.Features.CategoriesFeature.UpdateCategoryStatus
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return true;
+            return RequestResponse<bool>.Success(true, "Category activated successfully");
         }
     }
 }
