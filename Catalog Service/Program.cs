@@ -6,6 +6,7 @@ using Catalog_Service.Features.CategoriesFeature.GetAllCategories;
 using Catalog_Service.Features.CategoriesFeature.UpdateCategory;
 using Catalog_Service.Features.CategoriesFeature.UpdateCategoryStatus;
 using Catalog_Service.Features.OccasionsFeature.CreateOccasion;
+using Catalog_Service.Features.OccasionsFeature.GetAllOccasions;
 using Catalog_Service.Infrastructure;
 using Catalog_Service.Infrastructure.Data;
 using Catalog_Service.Infrastructure.UnitOfWork;
@@ -17,6 +18,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Events;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 
@@ -62,6 +64,17 @@ namespace Catalog_Service
                 // builder.Services.AddScoped<ICurrentUserService, CurrentUserService>(); 
                 // builder.Services.AddScoped<TransactionMiddleware>(); 
                  builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+                builder.Services.AddStackExchangeRedisCache(options =>
+                {
+                    var redisUrl = builder.Configuration["Redis:Url"];
+                    var redisPassword = builder.Configuration["Redis:Password"];
+
+                    if (string.IsNullOrEmpty(redisUrl))
+                        throw new ArgumentException("Redis URL is missing!");
+
+                    options.Configuration = $"{redisUrl},password={redisPassword}";
+                    options.InstanceName = "catalog_"; // prefix ?????
+                });
 
                 // Configure Entity Framework Core with SQL Server
                 builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
