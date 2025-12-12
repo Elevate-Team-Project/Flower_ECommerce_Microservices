@@ -15,6 +15,8 @@ using Serilog.Events;
 using System.Reflection;
 using System.Text;
 using Catalog_Service.Features.CategoriesFeature.CreateCategory;
+using Catalog_Service.Infrastructure.UnitOfWork;
+using Catalog_Service.Features.OccasionsFeature.UpdateOccasion;
 
 namespace Catalog_Service
 {
@@ -84,8 +86,11 @@ namespace Catalog_Service
                 {
                     var interfaceType = typeof(IBaseRepository<>).MakeGenericType(entityType);
                     var implementationType = typeof(BaseRepository<>).MakeGenericType(entityType);
+
                     builder.Services.AddScoped(interfaceType, implementationType);
                 }
+             
+                builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
                 Log.Information("Registered {Count} generic repositories successfully", entityTypes.Count);
 
@@ -232,6 +237,7 @@ namespace Catalog_Service
                 // Temporary endpoints until you add Features/Endpoints
                 app.MapGet("/", () => "Catalog Service is running.");
                 app.MapCategoryEndpoints();
+                app.MapOccasionEndpoints();
                 app.MapGet("/Brands", async (IBaseRepository<Brand> BrandRepo) => Results.Ok(await BrandRepo.GetAll().ToListAsync()));
 
                 await app.RunAsync();

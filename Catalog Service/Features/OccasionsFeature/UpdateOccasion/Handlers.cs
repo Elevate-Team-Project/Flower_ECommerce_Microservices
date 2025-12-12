@@ -1,6 +1,7 @@
-﻿namespace Catalog_Service.Features.OccasionsFeature.UpdateOccasion
+﻿using MediatR;
+
+namespace Catalog_Service.Features.OccasionsFeature.UpdateOccasion
 {
-    public class Handlers
-    {
-    }
+    public record UpdateOccasionCommand(int Id, UpdateOccasionDto OccasionDto) : IRequest<int>;
+
 }

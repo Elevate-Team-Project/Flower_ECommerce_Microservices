@@ -1,12 +1,13 @@
-﻿using BuildingBlocks.FullEntities.Catalog_Service_Entities;
+﻿//using BuildingBlocks.FullEntities.Catalog_Service_Entities;
+using Catalog_Service.Entities;
 using BuildingBlocks.Interfaces;
 using MediatR;
 
 namespace Catalog_Service.Features.CategoriesFeature.CreateCategory
 {
+    public record CreateCategoryCommand(CreateCategoryDto cat) : IRequest<int>;
 
-
-   public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryCommand,int>
+    public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryCommand,int>
     {
         private readonly IBaseRepository<Category> _repo;
         private readonly IUnitOfWork _unitOfWork;
