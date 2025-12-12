@@ -2,6 +2,7 @@ using BuildingBlocks.Interfaces;
 using BuildingBlocks.MiddleWares; // Ensure you have this namespace/folder
 using BuildingBlocks.SharedEntities;
 using Catalog_Service.Entities;
+using Catalog_Service.Features.CategoriesFeature.GetAllCategories;
 using Catalog_Service.Features.CategoriesFeature.UpdateCategory;
 using Catalog_Service.Features.CategoriesFeature.UpdateCategoryStatus;
 using Catalog_Service.Features.OccasionsFeature.CreateOccasion;
@@ -236,12 +237,10 @@ namespace Catalog_Service
                 app.MapGet("/", () => "Catalog Service is running.");
                 app.MapGet("/Brands", async (IBaseRepository<Brand> BrandRepo) => Results.Ok(await BrandRepo.GetAll().ToListAsync()));
                 app.MapUpdateCategoryEndpoints();
-
                 app.MapCategoryStatusEndpoints();
-
-
-
                 app.MapCreateOccasionEndpoints();
+                app.MapGetAllCategoriesEndpoints();
+              
 
                 await app.RunAsync();
             }
