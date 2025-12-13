@@ -239,20 +239,11 @@ namespace Catalog_Service
 
                 app.UseAuthentication();
                 app.UseAuthorization();
+                app.MapAllEndpoints();
 
                 // Uncomment once you have the Middleware class
                 // app.UseMiddleware<TransactionMiddleware>();
 
-                // Ensure you have an Extension method for MapAllEndpoints or use Controllers
-                // app.MapAllEndpoints(); 
-
-                // Temporary endpoints until you add Features/Endpoints
-                app.MapGet("/", () => "Catalog Service is running.");
-                app.MapGet("/Brands", async (IBaseRepository<Brand> BrandRepo) => Results.Ok(await BrandRepo.GetAll().ToListAsync()));
-                app.MapUpdateCategoryEndpoints();
-                app.MapCategoryStatusEndpoints();
-                app.MapCreateOccasionEndpoints();
-                app.MapGetAllCategoriesEndpoints();
               
 
                 await app.RunAsync();

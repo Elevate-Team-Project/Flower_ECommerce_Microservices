@@ -8,15 +8,21 @@ namespace Catalog_Service
         {
             var endpointTypes = Assembly.GetExecutingAssembly()
                 .GetTypes()
-                .Where(t => t.IsClass && t.Namespace?.StartsWith("WorkoutService.Features") == true && t.Name == "Endpoints");
+                .Where(t => t.IsClass
+                            && t.Namespace?.StartsWith("Catalog_Service.Features") == true
+                            && t.Name == "Endpoints");
 
             foreach (var type in endpointTypes)
             {
                 var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
-                    .Where(m => m.Name.StartsWith("Map") && m.GetParameters().Length == 1 && m.GetParameters()[0].ParameterType == typeof(WebApplication));
+                    .Where(m => m.Name.StartsWith("Map")
+                                && m.GetParameters().Length == 1
+                                // FIX: Check for IEndpointRouteBuilder, not WebApplication
+                                && m.GetParameters()[0].ParameterType == typeof(IEndpointRouteBuilder));
 
                 foreach (var method in methods)
                 {
+                    // 'app' implements IEndpointRouteBuilder, so this works perfectly
                     method.Invoke(null, new object[] { app });
                 }
             }
