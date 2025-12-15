@@ -16,6 +16,7 @@ using Serilog;
 using Serilog.Events;
 using System.Reflection;
 using System.Text;
+using BuildingBlocks.FullEntities.Catalog_Service_Entities.Occasions;
 
 namespace Catalog_Service
 {
@@ -54,6 +55,13 @@ namespace Catalog_Service
 
                 builder.Services.AddMemoryCache();
                 builder.Services.AddHttpContextAccessor();
+                // In your CatalogService's Program.cs or Startup.cs
+                // Register all repositories from BuildingBlocks
+                
+
+
+
+
 
                 // Ensure you have these classes created in your project or referencing BuildingBlocks
                 // builder.Services.AddScoped<ICurrentUserService, CurrentUserService>(); 
@@ -74,6 +82,8 @@ namespace Catalog_Service
                         options.EnableDetailedErrors(true);
                     }
                 });
+        
+
 
                 // Generic Repository Registration
                 var entityTypes = Assembly.GetExecutingAssembly()

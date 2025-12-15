@@ -1,6 +1,25 @@
-﻿namespace Catalog_Service.Features.OccasionsFeature.DeleteOccasion
+﻿using Catalog_Service.Features.Shared;
+using MediatR;
+
+namespace Catalog_Service.Features.OccasionsFeature.DeleteOccasion;
+
+public static class Endpoints
 {
-    public class Endpoints
+    public static void MapDeleteOccasionEndpoints(WebApplication app)
     {
+        app.MapDelete("/occasions/{id:int}",
+            async (int id, IMediator mediator, CancellationToken ct) =>
+            {
+                var result = await mediator.Send(new DeleteOccasionCommand(id), ct);
+
+                if (!result.IsSuccess)
+                    return Results.BadRequest(
+                        EndpointResponse<bool>.ErrorResponse(result.Message));
+
+                return Results.Ok(
+                    EndpointResponse<bool>.SuccessResponse(result.Data, result.Message));
+            })
+            .WithName("DeleteOccasion")
+            .WithTags("Occasions");
     }
 }
