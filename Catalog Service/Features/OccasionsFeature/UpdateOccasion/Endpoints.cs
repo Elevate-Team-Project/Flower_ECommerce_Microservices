@@ -1,4 +1,6 @@
-﻿using MediatR;
+﻿using Catalog_Service.Features.Shared;
+using MediatR;
+using Microsoft.Build.Execution;
 
 namespace Catalog_Service.Features.OccasionsFeature.UpdateOccasion
 {
@@ -10,10 +12,11 @@ namespace Catalog_Service.Features.OccasionsFeature.UpdateOccasion
             {
                 var command = new UpdateOccasionCommand(id, dto);
                 var result = await mediator.Send(command);
-                if (result == 0)
-                    return Results.NotFound($"Occasion with id {id} not found.");
+                if (!result.IsSuccess)
+                    return Results.NotFound(
+                        EndpointResponse<string>.NotFoundResponse($"Occasion with id {id} not found."));
 
-                return Results.Ok(new { id = result });
+                return Results.Ok(EndpointResponse<int>.SuccessResponse(result.Data!, result.Message));
             })
             .WithOpenApi()
             .WithName("UpdateOccasion")

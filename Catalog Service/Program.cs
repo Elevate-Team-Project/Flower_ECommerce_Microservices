@@ -17,7 +17,7 @@ using System.Text;
 using Catalog_Service.Features.CategoriesFeature.CreateCategory;
 using Catalog_Service.Infrastructure.UnitOfWork;
 using Catalog_Service.Features.OccasionsFeature.UpdateOccasion;
-
+using Catalog_Service.Features.CategoriesFeature.GetActiveCategoryFeature;
 namespace Catalog_Service
 {
     public class Program
@@ -238,6 +238,9 @@ namespace Catalog_Service
                 app.MapGet("/", () => "Catalog Service is running.");
                 app.MapCategoryEndpoints();
                 app.MapOccasionEndpoints();
+                app.MapGetActiveCategories();
+
+
                 app.MapGet("/Brands", async (IBaseRepository<Brand> BrandRepo) => Results.Ok(await BrandRepo.GetAll().ToListAsync()));
 
                 await app.RunAsync();

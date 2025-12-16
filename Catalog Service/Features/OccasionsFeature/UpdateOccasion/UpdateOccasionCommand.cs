@@ -1,11 +1,12 @@
 ﻿using BuildingBlocks.Interfaces;
 using Catalog_Service.Entities;
+using Catalog_Service.Features.Shared;
 using MediatR;
 using System.Security.Permissions;
 
 namespace Catalog_Service.Features.OccasionsFeature.UpdateOccasion
 {
-   public class UpdateOccasionCommandHandler:IRequestHandler<UpdateOccasionCommand,int>
+   public class UpdateOccasionCommandHandler:IRequestHandler<UpdateOccasionCommand, RequestResponse<int>>
 
     {
         private readonly IBaseRepository<Occasion> _repo;
@@ -16,12 +17,12 @@ namespace Catalog_Service.Features.OccasionsFeature.UpdateOccasion
             _unitOfWork = unitOfWork;
         }
         
-        public async Task<int>Handle(UpdateOccasionCommand request,CancellationToken cancellationToken)
+        public async Task<RequestResponse<int>> Handle(UpdateOccasionCommand request,CancellationToken cancellationToken)
         {
             var dto = request.OccasionDto;
                         var occasion = await _repo.GetByIdAsync(request.Id);
             if (occasion == null)
-                throw new Exception("Occasion not found");
+                return RequestResponse<int>.Fail("Occasion not found");
 
             occasion.Name = dto.Name;
                 occasion.Description = dto.Description;
@@ -29,7 +30,8 @@ namespace Catalog_Service.Features.OccasionsFeature.UpdateOccasion
             _repo.SaveInclude(occasion);
             await _unitOfWork.SaveChangesAsync();
 
-            return occasion.Id;
-            }
+
+            return RequestResponse<int>.Success(occasion.Id, "Updated successfully");
+        }
     }
 }
