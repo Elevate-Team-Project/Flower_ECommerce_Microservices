@@ -239,7 +239,7 @@ namespace Catalog_Service
                 app.MapCategoryEndpoints();
                 app.MapOccasionEndpoints();
                 app.MapGetActiveCategories();
-
+                app.MapADOccasionEndpoints();
 
                 app.MapGet("/Brands", async (IBaseRepository<Brand> BrandRepo) => Results.Ok(await BrandRepo.GetAll().ToListAsync()));
 
