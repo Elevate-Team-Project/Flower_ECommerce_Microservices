@@ -10,7 +10,8 @@ namespace Catalog_Service
                 .GetTypes()
                 .Where(t => t.IsClass
                             && t.Namespace?.StartsWith("Catalog_Service.Features") == true
-                            && t.Name == "Endpoints");
+                            && t.Name.EndsWith("Endpoints")
+);
 
             foreach (var type in endpointTypes)
             {
