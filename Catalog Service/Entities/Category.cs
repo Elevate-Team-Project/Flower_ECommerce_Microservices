@@ -7,6 +7,7 @@ namespace Catalog_Service.Entities
     {
         public string Name { get; set; }
         public string ImageUrl { get; set; }
+
         [ForeignKey(nameof(Category))]
         public int? ParentCategoryId { get; set; }
 
