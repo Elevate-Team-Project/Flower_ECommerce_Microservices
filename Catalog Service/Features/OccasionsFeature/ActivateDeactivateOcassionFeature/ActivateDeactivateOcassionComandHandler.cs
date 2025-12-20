@@ -6,27 +6,26 @@ using System.Security.Permissions;
 
 namespace Catalog_Service.Features.OccasionsFeature.UpdateOccasion
 {
-   public class UpdateOccasionCommandHandler:IRequestHandler<UpdateOccasionCommand, RequestResponse<int>>
+   public class ActivateDeactivateOcassionComandHandler : IRequestHandler<ActivateDeactivateOcassionComand, RequestResponse<int>>
 
     {
         private readonly IBaseRepository<Occasion> _repo;
         private readonly IUnitOfWork _unitOfWork;
-        public UpdateOccasionCommandHandler(IBaseRepository<Occasion> repo,IUnitOfWork unitOfWork)
+        public ActivateDeactivateOcassionComandHandler(IBaseRepository<Occasion> repo,IUnitOfWork unitOfWork)
         {
             _repo = repo;
             _unitOfWork = unitOfWork;
         }
         
-        public async Task<RequestResponse<int>> Handle(UpdateOccasionCommand request,CancellationToken cancellationToken)
+        public async Task<RequestResponse<int>> Handle(ActivateDeactivateOcassionComand request,CancellationToken cancellationToken)
         {
-            var dto = request.OccasionDto;
-                        var occasion = await _repo.GetByIdAsync(request.Id);
+            var dto = request.ADOccasionDto;
+            var occasion = await _repo.GetByIdAsync(request.Id);
             if (occasion == null)
                 return RequestResponse<int>.Fail("Occasion not found");
 
-            occasion.Name = dto.Name;
-                occasion.Description = dto.Description;
-                occasion.ImageUrl = dto.ImageUrl;
+            occasion.IsActive = dto.IsActive;
+               
             _repo.SaveInclude(occasion);
             await _unitOfWork.SaveChangesAsync();
 

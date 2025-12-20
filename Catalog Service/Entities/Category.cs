@@ -11,7 +11,7 @@ namespace Catalog_Service.Entities
         [ForeignKey(nameof(Category))]
         public int? ParentCategoryId { get; set; }
 
-        // Navigation Properties
+       
         public virtual Category ParentCategory { get; set; }
         public virtual ICollection<Category> SubCategories { get; set; }
     }
