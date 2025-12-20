@@ -1,11 +1,15 @@
 using BuildingBlocks.Interfaces;
+using BuildingBlocks.MiddleWares; // Ensure you have this namespace/folder
 using BuildingBlocks.SharedEntities;
 using Catalog_Service.Entities;
+using Catalog_Service.Features.CategoriesFeature.GetAllCategories;
+using Catalog_Service.Features.CategoriesFeature.UpdateCategory;
+using Catalog_Service.Features.CategoriesFeature.UpdateCategoryStatus;
+using Catalog_Service.Features.OccasionsFeature.CreateOccasion;
+using Catalog_Service.Features.OccasionsFeature.GetAllOccasions;
 using Catalog_Service.Infrastructure;
 using Catalog_Service.Infrastructure.Data;
 using Catalog_Service.Infrastructure.UnitOfWork;
-using Catalog_Service.Features.CategoriesFeature.DeleteCategory;
-using BuildingBlocks.MiddleWares; // Ensure you have this namespace/folder
 using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -14,10 +18,13 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Events;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
-using BuildingBlocks.FullEntities.Catalog_Service_Entities.Occasions;
-
+using Catalog_Service.Features.CategoriesFeature.CreateCategory;
+using Catalog_Service.Infrastructure.UnitOfWork;
+using Catalog_Service.Features.OccasionsFeature.UpdateOccasion;
+using Catalog_Service.Features.CategoriesFeature.GetActiveCategoryFeature;
 namespace Catalog_Service
 {
     public class Program
@@ -66,7 +73,18 @@ namespace Catalog_Service
                 // Ensure you have these classes created in your project or referencing BuildingBlocks
                 // builder.Services.AddScoped<ICurrentUserService, CurrentUserService>(); 
                 // builder.Services.AddScoped<TransactionMiddleware>(); 
-                builder.Services.AddScoped<IUnitOfWork, Catalog_Service.Infrastructure.UnitOfWork.UnitOfWork>();
+                 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+                builder.Services.AddStackExchangeRedisCache(options =>
+                {
+                    var redisUrl = builder.Configuration["Redis:Url"];
+                    var redisPassword = builder.Configuration["Redis:Password"];
+
+                    if (string.IsNullOrEmpty(redisUrl))
+                        throw new ArgumentException("Redis URL is missing!");
+
+                    options.Configuration = $"{redisUrl},password={redisPassword}";
+                    options.InstanceName = "catalog_"; // prefix ?????
+                });
 
                 // Configure Entity Framework Core with SQL Server
                 builder.Services.AddDbContextPool<ApplicationDbContext>(options =>
@@ -95,8 +113,11 @@ namespace Catalog_Service
                 {
                     var interfaceType = typeof(IBaseRepository<>).MakeGenericType(entityType);
                     var implementationType = typeof(BaseRepository<>).MakeGenericType(entityType);
+
                     builder.Services.AddScoped(interfaceType, implementationType);
                 }
+             
+                builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
                 Log.Information("Registered {Count} generic repositories successfully", entityTypes.Count);
 
@@ -233,16 +254,12 @@ namespace Catalog_Service
 
                 app.UseAuthentication();
                 app.UseAuthorization();
+                app.MapAllEndpoints();
 
                 // Uncomment once you have the Middleware class
                 // app.UseMiddleware<TransactionMiddleware>();
 
-                // Feature endpoints
-                Endpoints.MapDeleteCategoryEndpoints(app);
-
-                // Temporary endpoints until you add Features/Endpoints
-                app.MapGet("/", () => "Catalog Service is running.");
-                app.MapGet("/Brands", async (IBaseRepository<Brand> BrandRepo) => Results.Ok(await BrandRepo.GetAll().ToListAsync()));
+              
 
                 await app.RunAsync();
             }
