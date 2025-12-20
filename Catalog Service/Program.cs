@@ -21,7 +21,10 @@ using Serilog.Events;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
-
+using Catalog_Service.Features.CategoriesFeature.CreateCategory;
+using Catalog_Service.Infrastructure.UnitOfWork;
+using Catalog_Service.Features.OccasionsFeature.UpdateOccasion;
+using Catalog_Service.Features.CategoriesFeature.GetActiveCategoryFeature;
 namespace Catalog_Service
 {
     public class Program
@@ -101,8 +104,11 @@ namespace Catalog_Service
                 {
                     var interfaceType = typeof(IBaseRepository<>).MakeGenericType(entityType);
                     var implementationType = typeof(BaseRepository<>).MakeGenericType(entityType);
+
                     builder.Services.AddScoped(interfaceType, implementationType);
                 }
+             
+                builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
                 Log.Information("Registered {Count} generic repositories successfully", entityTypes.Count);
 
