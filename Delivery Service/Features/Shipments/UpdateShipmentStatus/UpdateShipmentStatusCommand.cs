@@ -1,7 +1,7 @@
 using MediatR;
-using Ordering_Service.Features.Shared;
+using Delivery_Service.Features.Shared;
 
-namespace Ordering_Service.Features.Shipments.UpdateShipmentStatus
+namespace Delivery_Service.Features.Shipments.UpdateShipmentStatus
 {
     public record UpdateShipmentStatusCommand(
         int ShipmentId,

@@ -8,9 +8,6 @@ using Ordering_Service.Features.Orders.CreateOrder;
 using Ordering_Service.Features.Orders.GetOrderDetails;
 using Ordering_Service.Features.Orders.GetUserOrders;
 using Ordering_Service.Features.Orders.UpdateOrderStatus;
-using Ordering_Service.Features.Shipments.CreateShipment;
-using Ordering_Service.Features.Shipments.GetShipmentDetails;
-using Ordering_Service.Features.Shipments.UpdateShipmentStatus;
 using Ordering_Service.Infrastructure;
 using Ordering_Service.Infrastructure.Data;
 using Ordering_Service.Infrastructure.UnitOfWork;
@@ -24,34 +21,23 @@ namespace Ordering_Service
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // =========================================================
-            // 📦 Database Configuration
-            // =========================================================
+            // Database
             builder.Services.AddDbContext<OrderingDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // =========================================================
-            // 🔧 Dependency Injection - Repositories & UoW
-            // =========================================================
+            // Repositories & UoW
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IBaseRepository<Order>, BaseRepository<Order>>();
             builder.Services.AddScoped<IBaseRepository<OrderItem>, BaseRepository<OrderItem>>();
-            builder.Services.AddScoped<IBaseRepository<Shipment>, BaseRepository<Shipment>>();
             builder.Services.AddScoped<IBaseRepository<DiscountUsage>, BaseRepository<DiscountUsage>>();
 
-            // =========================================================
-            // 🎯 MediatR Configuration
-            // =========================================================
+            // MediatR
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
-            // =========================================================
-            // ✅ FluentValidation Configuration
-            // =========================================================
+            // FluentValidation
             builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderValidator>();
 
-            // =========================================================
-            // 🚌 MassTransit Configuration (Message Bus)
-            // =========================================================
+            // MassTransit
             builder.Services.AddMassTransit(x =>
             {
                 x.AddEntityFrameworkOutbox<OrderingDbContext>(o =>
@@ -67,44 +53,26 @@ namespace Ordering_Service
                         h.Username(builder.Configuration["RabbitMQ:Username"] ?? "guest");
                         h.Password(builder.Configuration["RabbitMQ:Password"] ?? "guest");
                     });
-
                     cfg.ConfigureEndpoints(context);
                 });
             });
 
-            // =========================================================
-            // 🔐 Authorization Configuration
-            // =========================================================
             builder.Services.AddAuthorization(options =>
             {
-                options.AddPolicy("AdminPolicy", policy =>
-                    policy.RequireRole("Admin"));
+                options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
             });
 
-            // =========================================================
-            // 📚 Swagger/OpenAPI Configuration
-            // =========================================================
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new() { Title = "Ordering Service API", Version = "v1" });
-            });
+            builder.Services.AddSwaggerGen(c => c.SwaggerDoc("v1", new() { Title = "Ordering Service API", Version = "v1" }));
 
             var app = builder.Build();
 
-            // =========================================================
-            // 🌱 Database Seeding (Development Only)
-            // =========================================================
             if (app.Environment.IsDevelopment())
             {
                 using var scope = app.Services.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
-                await DatabaseSeeder.SeedAsync(context);
+                await DatabaseSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<OrderingDbContext>());
             }
 
-            // =========================================================
-            // 🔧 Middleware Pipeline
-            // =========================================================
             app.UseErrorHandling();
 
             if (app.Environment.IsDevelopment())
@@ -116,19 +84,13 @@ namespace Ordering_Service
             app.UseHttpsRedirection();
             app.UseAuthorization();
 
-            // =========================================================
-            // 🛣️ Map Endpoints
-            // =========================================================
-            // Orders
+            // Map Order Endpoints
             app.MapCreateOrderEndpoints();
             app.MapGetUserOrdersEndpoints();
             app.MapGetOrderDetailsEndpoints();
             app.MapUpdateOrderStatusEndpoints();
 
-            // Shipments
-            app.MapCreateShipmentEndpoints();
-            app.MapUpdateShipmentStatusEndpoints();
-            app.MapGetShipmentDetailsEndpoints();
+            // Note: Shipment endpoints have been moved to Delivery Service
 
             await app.RunAsync();
         }

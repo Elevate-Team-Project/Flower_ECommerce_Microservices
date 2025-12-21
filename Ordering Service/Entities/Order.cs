@@ -20,9 +20,18 @@ namespace Ordering_Service.Entities
         public DateTime? DeliveredAt { get; set; }
         public string? Notes { get; set; }
 
+        // Delivery Address Reference (from Delivery Service)
+        public int? DeliveryAddressId { get; set; }
+
+        // Gift Order Fields (US-D05)
+        public bool IsGift { get; set; } = false;
+        public string? RecipientName { get; set; }
+        public string? RecipientPhone { get; set; }
+        public string? GiftMessage { get; set; }
+
         // Navigation Properties
         public virtual ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
-        public virtual ICollection<Shipment> Shipments { get; set; } = new List<Shipment>();
         public virtual DiscountUsage? DiscountUsage { get; set; }
+        // Note: Shipments are now managed by the Delivery Service
     }
 }

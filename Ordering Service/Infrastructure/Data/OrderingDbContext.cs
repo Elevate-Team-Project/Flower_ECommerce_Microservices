@@ -16,7 +16,6 @@ namespace Ordering_Service.Infrastructure.Data
         // =========================================================
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
-        public DbSet<Shipment> Shipments { get; set; }
         public DbSet<DiscountUsage> DiscountUsages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -29,7 +28,6 @@ namespace Ordering_Service.Infrastructure.Data
             modelBuilder.AddInboxStateEntity();
             modelBuilder.AddOutboxMessageEntity();
             modelBuilder.AddOutboxStateEntity();
-            // =========================================================
 
             // =========================================================
             // 🔗 Relationships & Keys Configuration
@@ -42,21 +40,14 @@ namespace Ordering_Service.Infrastructure.Data
                 .HasForeignKey(i => i.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // 2. Configure Order -> Shipments Relationship (One-to-Many)
-            modelBuilder.Entity<Order>()
-                .HasMany(o => o.Shipments)
-                .WithOne(s => s.Order)
-                .HasForeignKey(s => s.OrderId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // 3. Configure Order -> DiscountUsage Relationship (One-to-One)
+            // 2. Configure Order -> DiscountUsage Relationship (One-to-One)
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.DiscountUsage)
                 .WithOne(d => d.Order)
                 .HasForeignKey<DiscountUsage>(d => d.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // 4. Configure Decimal Precision for Money
+            // 3. Configure Decimal Precision for Money
             modelBuilder.Entity<Order>()
                 .Property(o => o.SubTotal)
                 .HasColumnType("decimal(18,2)");
@@ -90,7 +81,6 @@ namespace Ordering_Service.Infrastructure.Data
             // =========================================================
             modelBuilder.Entity<Order>().HasQueryFilter(e => !e.IsDeleted);
             modelBuilder.Entity<OrderItem>().HasQueryFilter(e => !e.IsDeleted);
-            modelBuilder.Entity<Shipment>().HasQueryFilter(e => !e.IsDeleted);
             modelBuilder.Entity<DiscountUsage>().HasQueryFilter(e => !e.IsDeleted);
         }
 
@@ -122,7 +112,6 @@ namespace Ordering_Service.Infrastructure.Data
                             break;
 
                         case EntityState.Deleted:
-                            // Intercept delete and turn it into Soft Delete
                             entry.State = EntityState.Modified;
                             baseEntity.IsDeleted = true;
                             baseEntity.DeletedAt = DateTime.UtcNow;
