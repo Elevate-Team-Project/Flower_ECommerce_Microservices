@@ -94,7 +94,7 @@ namespace Catalog_Service
 
                 Log.Information("Registered {Count} generic repositories successfully", entityTypes.Count);
 
-                builder.Services.AddMediatR(typeof(Program).Assembly);;
+                builder.Services.AddMediatR(typeof(Program).Assembly); 
 
                 // -------------------------------------------------------------------------------------
                 // MassTransit Configuration (RabbitMQ + Outbox Pattern)
