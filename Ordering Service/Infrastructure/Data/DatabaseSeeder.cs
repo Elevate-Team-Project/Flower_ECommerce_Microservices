@@ -7,16 +7,10 @@ namespace Ordering_Service.Infrastructure.Data
     {
         public static async Task SeedAsync(OrderingDbContext context)
         {
-            // Ensure database is created
             await context.Database.MigrateAsync();
 
-            // Check if we already have data
-            if (await context.Orders.AnyAsync())
-            {
-                return; // Database already seeded
-            }
+            if (await context.Orders.AnyAsync()) return;
 
-            // Seed sample orders
             var sampleOrders = new List<Order>
             {
                 new Order
@@ -43,18 +37,6 @@ namespace Ordering_Service.Infrastructure.Data
                             ProductImageUrl = "/images/red-roses.jpg",
                             UnitPrice = 49.99m,
                             Quantity = 2
-                        }
-                    },
-                    Shipments = new List<Shipment>
-                    {
-                        new Shipment
-                        {
-                            TrackingNumber = "TRACK-001-ABC",
-                            Carrier = "FlowerExpress",
-                            Status = "Delivered",
-                            EstimatedDeliveryDate = DateTime.UtcNow.AddDays(-3),
-                            ActualDeliveryDate = DateTime.UtcNow.AddDays(-3),
-                            CurrentLocation = "Delivered"
                         }
                     }
                 },

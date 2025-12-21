@@ -21,7 +21,6 @@ namespace Ordering_Service.Features.Orders.GetOrderDetails
         {
             var order = await _orderRepository.GetAll()
                 .Include(o => o.Items)
-                .Include(o => o.Shipments)
                 .FirstOrDefaultAsync(o => o.Id == request.OrderId && o.UserId == request.UserId, cancellationToken);
 
             if (order == null)
@@ -56,15 +55,10 @@ namespace Ordering_Service.Features.Orders.GetOrderDetails
                     i.Quantity,
                     i.TotalPrice
                 )).ToList(),
-                order.Shipments.Select(s => new ShipmentDetailDto(
-                    s.Id,
-                    s.TrackingNumber,
-                    s.Carrier,
-                    s.Status,
-                    s.EstimatedDeliveryDate,
-                    s.ActualDeliveryDate,
-                    s.CurrentLocation
-                )).ToList()
+                order.IsGift,
+                order.RecipientName,
+                order.GiftMessage,
+                order.DeliveryAddressId
             );
 
             return EndpointResponse<OrderDetailDto>.SuccessResponse(dto, "Order details retrieved successfully");

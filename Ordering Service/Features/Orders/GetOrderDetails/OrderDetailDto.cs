@@ -19,7 +19,11 @@ namespace Ordering_Service.Features.Orders.GetOrderDetails
         string? Notes,
         DateTime CreatedAt,
         List<OrderItemDetailDto> Items,
-        List<ShipmentDetailDto> Shipments
+        // Gift order fields
+        bool IsGift,
+        string? RecipientName,
+        string? GiftMessage,
+        int? DeliveryAddressId
     );
 
     public record OrderItemDetailDto(
@@ -30,15 +34,5 @@ namespace Ordering_Service.Features.Orders.GetOrderDetails
         decimal UnitPrice,
         int Quantity,
         decimal TotalPrice
-    );
-
-    public record ShipmentDetailDto(
-        int ShipmentId,
-        string TrackingNumber,
-        string Carrier,
-        string Status,
-        DateTime? EstimatedDeliveryDate,
-        DateTime? ActualDeliveryDate,
-        string? CurrentLocation
     );
 }
