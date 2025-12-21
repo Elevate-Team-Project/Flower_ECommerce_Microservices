@@ -249,7 +249,7 @@ namespace Cart_Service
                 app.UseAuthorization();
 
                 // Ensure you have the EndpointExtensions class in your Cart project as well!
-                // app.MapAllEndpoints(); 
+                app.MapAllEndpoints(); 
                 app.MapGet("/health", () => Results.Ok("Cart Service is healthy"));
                 // get all carts 
                 app.MapGet("/carts", async (IBaseRepository<Entities.Cart> cartRepository) =>
