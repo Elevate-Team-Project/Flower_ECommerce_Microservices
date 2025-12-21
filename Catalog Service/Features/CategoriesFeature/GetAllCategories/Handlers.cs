@@ -32,4 +32,5 @@ namespace Catalog_Service.Features.CategoriesFeature.GetAllCategories
             );
         }
     }
+
 }

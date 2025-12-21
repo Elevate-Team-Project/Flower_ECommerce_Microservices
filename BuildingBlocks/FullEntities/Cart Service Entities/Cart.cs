@@ -11,7 +11,7 @@ namespace BuildingBlocks.FullEntities.Cart_Service_Entities
     {
         public string UserId { get; set; }
         public string CouponCode { get; set; }
-        public DateTime? LastModified { get; set; }
+        public DateTime? UpdatedAt { get; set; }
 
         public virtual ICollection<CartItem> Items { get; set; }
     }

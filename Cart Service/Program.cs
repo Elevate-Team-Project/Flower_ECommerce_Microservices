@@ -220,7 +220,7 @@ namespace Cart_Service
                     {
                         var context = services.GetRequiredService<ApplicationDbContext>();
                         await context.Database.MigrateAsync();
-                        // await DatabaseSeeder.SeedAsync(services); // Uncomment if you implement seeding
+                        await DatabaseSeeder.SeedAsync(services);
                     }
                     catch (Exception ex)
                     {
