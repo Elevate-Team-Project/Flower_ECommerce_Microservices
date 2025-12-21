@@ -1,6 +1,6 @@
 ﻿namespace Catalog_Service.Features.CategoriesFeature.GetAllCategories
 {
-    public class CategoryactiveViewModel
+    public class CategoryViewModel
     {
         public int Id { get; set; }
         public string Name { get; set; }
