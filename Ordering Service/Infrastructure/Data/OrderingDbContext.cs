@@ -1,0 +1,135 @@
+using BuildingBlocks.SharedEntities;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using Ordering_Service.Entities;
+
+namespace Ordering_Service.Infrastructure.Data
+{
+    public class OrderingDbContext : DbContext
+    {
+        public OrderingDbContext(DbContextOptions<OrderingDbContext> options) : base(options)
+        {
+        }
+
+        // =========================================================
+        // 📦 DbSets
+        // =========================================================
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<Shipment> Shipments { get; set; }
+        public DbSet<DiscountUsage> DiscountUsages { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // =========================================================
+            // 🚌 MassTransit Outbox Configuration
+            // =========================================================
+            modelBuilder.AddInboxStateEntity();
+            modelBuilder.AddOutboxMessageEntity();
+            modelBuilder.AddOutboxStateEntity();
+            // =========================================================
+
+            // =========================================================
+            // 🔗 Relationships & Keys Configuration
+            // =========================================================
+
+            // 1. Configure Order -> OrderItems Relationship (One-to-Many)
+            modelBuilder.Entity<Order>()
+                .HasMany(o => o.Items)
+                .WithOne(i => i.Order)
+                .HasForeignKey(i => i.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // 2. Configure Order -> Shipments Relationship (One-to-Many)
+            modelBuilder.Entity<Order>()
+                .HasMany(o => o.Shipments)
+                .WithOne(s => s.Order)
+                .HasForeignKey(s => s.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // 3. Configure Order -> DiscountUsage Relationship (One-to-One)
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.DiscountUsage)
+                .WithOne(d => d.Order)
+                .HasForeignKey<DiscountUsage>(d => d.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // 4. Configure Decimal Precision for Money
+            modelBuilder.Entity<Order>()
+                .Property(o => o.SubTotal)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.DiscountAmount)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.ShippingCost)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<Order>()
+                .Property(o => o.TotalAmount)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<OrderItem>()
+                .Property(i => i.UnitPrice)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<DiscountUsage>()
+                .Property(d => d.DiscountAmount)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<DiscountUsage>()
+                .Property(d => d.DiscountValue)
+                .HasColumnType("decimal(18,2)");
+
+            // =========================================================
+            // 🗑️ Global Query Filter (Soft Delete)
+            // =========================================================
+            modelBuilder.Entity<Order>().HasQueryFilter(e => !e.IsDeleted);
+            modelBuilder.Entity<OrderItem>().HasQueryFilter(e => !e.IsDeleted);
+            modelBuilder.Entity<Shipment>().HasQueryFilter(e => !e.IsDeleted);
+            modelBuilder.Entity<DiscountUsage>().HasQueryFilter(e => !e.IsDeleted);
+        }
+
+        // =========================================================
+        // 💾 SaveChanges Interceptor (Automatic Auditing)
+        // =========================================================
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            OnBeforeSaving();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void OnBeforeSaving()
+        {
+            var entries = ChangeTracker.Entries();
+            foreach (var entry in entries)
+            {
+                if (entry.Entity is BaseEntity baseEntity)
+                {
+                    switch (entry.State)
+                    {
+                        case EntityState.Added:
+                            baseEntity.CreatedAt = DateTime.UtcNow;
+                            baseEntity.IsDeleted = false;
+                            break;
+
+                        case EntityState.Modified:
+                            baseEntity.UpdatedAt = DateTime.UtcNow;
+                            break;
+
+                        case EntityState.Deleted:
+                            // Intercept delete and turn it into Soft Delete
+                            entry.State = EntityState.Modified;
+                            baseEntity.IsDeleted = true;
+                            baseEntity.DeletedAt = DateTime.UtcNow;
+                            break;
+                    }
+                }
+            }
+        }
+    }
+}
