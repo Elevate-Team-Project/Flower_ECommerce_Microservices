@@ -73,6 +73,28 @@ services:
     networks:
       - flower_network
 
+  # ==========================================
+  # 5. Auth Service (ADD THIS)
+  # ==========================================
+  authservice:
+    image: ${DOCKER_REGISTRY-}authservice
+    build:
+      context: .
+      # Assuming your folder is named "Auth Service" based on your Dockerfile snippet
+      dockerfile: "Auth Service/Dockerfile" 
+    ports:
+      - "8090:8080"  # Host Port 8090 -> Container Port 8080
+      - "8091:8081"
+    environment:
+      # Override SQL Connection to point to the Docker SQL container
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AuthDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - flower_network
+
 volumes:
   sql_data:
   rabbitmq_data:

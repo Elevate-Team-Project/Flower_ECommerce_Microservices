@@ -250,6 +250,13 @@ namespace Cart_Service
 
                 // Ensure you have the EndpointExtensions class in your Cart project as well!
                 // app.MapAllEndpoints(); 
+                app.MapGet("/health", () => Results.Ok("Cart Service is healthy"));
+                // get all carts 
+                app.MapGet("/carts", async (IBaseRepository<Entities.Cart> cartRepository) =>
+                {
+                    var carts = await cartRepository.GetAll().ToListAsync();
+                    return Results.Ok(carts);
+                });
 
                 await app.RunAsync();
             }

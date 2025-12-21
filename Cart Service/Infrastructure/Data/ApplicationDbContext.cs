@@ -2,13 +2,6 @@
 using Cart_Service.Entities;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using System;
-
-using System.Collections.Generic;
-using System.Reflection.Emit;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Cart_Service.Infrastructure.Data
 {
     public class ApplicationDbContext : DbContext
