@@ -39,22 +39,44 @@ namespace Delivery_Service.Features.Addresses.CreateAddress
                 AddressLabel = request.AddressLabel,
                 FullName = request.FullName,
                 Phone = request.Phone,
-                Street = request.Street,
+                // Map Location
+                Latitude = request.Latitude,
+                Longitude = request.Longitude,
+                // Address Details
+                Governorate = request.Governorate,
                 City = request.City,
-                State = request.State,
+                Street = request.Street,
+                Building = request.Building,
+                Floor = request.Floor,
+                Apartment = request.Apartment,
                 PostalCode = request.PostalCode,
                 Country = request.Country,
                 IsDefault = request.IsDefault,
-                Notes = request.Notes
+                Notes = request.Notes,
+                Landmark = request.Landmark
             };
 
             await _addressRepository.AddAsync(address);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var dto = new AddressDto(
-                address.Id, address.AddressLabel, address.FullName, address.Phone,
-                address.Street, address.City, address.State, address.PostalCode,
-                address.Country, address.IsDefault, address.FullAddress
+                address.Id,
+                address.AddressLabel,
+                address.FullName,
+                address.Phone,
+                address.Latitude,
+                address.Longitude,
+                address.Governorate,
+                address.City,
+                address.Street,
+                address.Building,
+                address.Floor,
+                address.Apartment,
+                address.PostalCode,
+                address.Country,
+                address.IsDefault,
+                address.Landmark,
+                address.FullAddress
             );
 
             return EndpointResponse<AddressDto>.SuccessResponse(dto, "Address created successfully", 201);

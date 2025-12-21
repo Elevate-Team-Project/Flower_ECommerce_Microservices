@@ -10,11 +10,19 @@ namespace Delivery_Service.Features.Addresses.UpdateAddress
         string AddressLabel,
         string FullName,
         string Phone,
-        string Street,
+        // Map Location
+        double? Latitude,
+        double? Longitude,
+        // Address Details
+        string Governorate,
         string City,
-        string State,
-        string PostalCode,
-        string Country,
-        string? Notes = null
+        string Street,
+        string? Building,
+        string? Floor,
+        string? Apartment,
+        string? PostalCode,
+        string Country = "Egypt",
+        string? Notes = null,
+        string? Landmark = null
     ) : IRequest<EndpointResponse<AddressDto>>;
 }

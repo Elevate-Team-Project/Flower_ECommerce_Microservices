@@ -29,20 +29,40 @@ namespace Delivery_Service.Features.Addresses.UpdateAddress
             address.AddressLabel = request.AddressLabel;
             address.FullName = request.FullName;
             address.Phone = request.Phone;
-            address.Street = request.Street;
+            address.Latitude = request.Latitude;
+            address.Longitude = request.Longitude;
+            address.Governorate = request.Governorate;
             address.City = request.City;
-            address.State = request.State;
+            address.Street = request.Street;
+            address.Building = request.Building;
+            address.Floor = request.Floor;
+            address.Apartment = request.Apartment;
             address.PostalCode = request.PostalCode;
             address.Country = request.Country;
             address.Notes = request.Notes;
+            address.Landmark = request.Landmark;
 
             _addressRepository.Update(address);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var dto = new AddressDto(
-                address.Id, address.AddressLabel, address.FullName, address.Phone,
-                address.Street, address.City, address.State, address.PostalCode,
-                address.Country, address.IsDefault, address.FullAddress
+                address.Id,
+                address.AddressLabel,
+                address.FullName,
+                address.Phone,
+                address.Latitude,
+                address.Longitude,
+                address.Governorate,
+                address.City,
+                address.Street,
+                address.Building,
+                address.Floor,
+                address.Apartment,
+                address.PostalCode,
+                address.Country,
+                address.IsDefault,
+                address.Landmark,
+                address.FullAddress
             );
 
             return EndpointResponse<AddressDto>.SuccessResponse(dto, "Address updated successfully");

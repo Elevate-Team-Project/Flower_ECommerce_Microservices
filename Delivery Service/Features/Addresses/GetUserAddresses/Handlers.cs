@@ -21,9 +21,23 @@ namespace Delivery_Service.Features.Addresses.GetUserAddresses
                 .OrderByDescending(a => a.IsDefault)
                 .ThenByDescending(a => a.CreatedAt)
                 .Select(a => new AddressDto(
-                    a.Id, a.AddressLabel, a.FullName, a.Phone,
-                    a.Street, a.City, a.State, a.PostalCode,
-                    a.Country, a.IsDefault, a.FullAddress
+                    a.Id,
+                    a.AddressLabel,
+                    a.FullName,
+                    a.Phone,
+                    a.Latitude,
+                    a.Longitude,
+                    a.Governorate,
+                    a.City,
+                    a.Street,
+                    a.Building,
+                    a.Floor,
+                    a.Apartment,
+                    a.PostalCode,
+                    a.Country,
+                    a.IsDefault,
+                    a.Landmark,
+                    a.FullAddress
                 ))
                 .ToListAsync(cancellationToken);
 

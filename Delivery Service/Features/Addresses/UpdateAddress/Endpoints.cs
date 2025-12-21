@@ -10,9 +10,23 @@ namespace Delivery_Service.Features.Addresses.UpdateAddress
             app.MapPut("/api/addresses/{addressId}", async (int addressId, [FromBody] UpdateAddressRequest request, IMediator mediator) =>
             {
                 var command = new UpdateAddressCommand(
-                    addressId, request.UserId, request.AddressLabel, request.FullName,
-                    request.Phone, request.Street, request.City, request.State,
-                    request.PostalCode, request.Country, request.Notes
+                    addressId,
+                    request.UserId,
+                    request.AddressLabel,
+                    request.FullName,
+                    request.Phone,
+                    request.Latitude,
+                    request.Longitude,
+                    request.Governorate,
+                    request.City,
+                    request.Street,
+                    request.Building,
+                    request.Floor,
+                    request.Apartment,
+                    request.PostalCode,
+                    request.Country,
+                    request.Notes,
+                    request.Landmark
                 );
                 var result = await mediator.Send(command);
                 return result.IsSuccess ? Results.Ok(result) : Results.NotFound(result);
@@ -24,7 +38,21 @@ namespace Delivery_Service.Features.Addresses.UpdateAddress
     }
 
     public record UpdateAddressRequest(
-        string UserId, string AddressLabel, string FullName, string Phone,
-        string Street, string City, string State, string PostalCode, string Country, string? Notes
+        string UserId,
+        string AddressLabel,
+        string FullName,
+        string Phone,
+        double? Latitude,
+        double? Longitude,
+        string Governorate,
+        string City,
+        string Street,
+        string? Building,
+        string? Floor,
+        string? Apartment,
+        string? PostalCode,
+        string Country,
+        string? Notes,
+        string? Landmark
     );
 }

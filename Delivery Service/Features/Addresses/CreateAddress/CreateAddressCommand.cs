@@ -8,13 +8,21 @@ namespace Delivery_Service.Features.Addresses.CreateAddress
         string AddressLabel,
         string FullName,
         string Phone,
-        string Street,
+        // Map Location
+        double? Latitude,
+        double? Longitude,
+        // Address Details
+        string Governorate,
         string City,
-        string State,
-        string PostalCode,
-        string Country,
+        string Street,
+        string? Building,
+        string? Floor,
+        string? Apartment,
+        string? PostalCode,
+        string Country = "Egypt",
         bool IsDefault = false,
-        string? Notes = null
+        string? Notes = null,
+        string? Landmark = null
     ) : IRequest<EndpointResponse<AddressDto>>;
 
     public record AddressDto(
@@ -22,12 +30,20 @@ namespace Delivery_Service.Features.Addresses.CreateAddress
         string AddressLabel,
         string FullName,
         string Phone,
-        string Street,
+        // Map Location
+        double? Latitude,
+        double? Longitude,
+        // Address Details
+        string Governorate,
         string City,
-        string State,
-        string PostalCode,
+        string Street,
+        string? Building,
+        string? Floor,
+        string? Apartment,
+        string? PostalCode,
         string Country,
         bool IsDefault,
+        string? Landmark,
         string FullAddress
     );
 }
