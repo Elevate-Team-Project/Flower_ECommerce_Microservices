@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Microsoft.AspNetCore.Builder;
 
 namespace Cart_Service
 {
@@ -9,7 +10,7 @@ namespace Cart_Service
             var endpointTypes = Assembly.GetExecutingAssembly()
                 .GetTypes()
                 .Where(t => t.IsClass
-                            && t.Namespace?.StartsWith("Catalog_Service.Features") == true
+                            && t.Namespace?.StartsWith("Cart_Service.Features") == true
                             && t.Name.EndsWith("Endpoints")
 );
 
