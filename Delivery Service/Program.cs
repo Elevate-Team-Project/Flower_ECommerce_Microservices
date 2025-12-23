@@ -1,8 +1,4 @@
 using BuildingBlocks.Interfaces;
-using FluentValidation;
-using MassTransit;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Delivery_Service.Entities;
 using Delivery_Service.Features.Addresses.CreateAddress;
 using Delivery_Service.Features.Addresses.GetUserAddresses;
