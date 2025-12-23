@@ -1,4 +1,4 @@
-﻿using BuildingBlocks.SharedEntities;
+﻿ using BuildingBlocks.SharedEntities;
 using Catalog_Service.Entities;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;

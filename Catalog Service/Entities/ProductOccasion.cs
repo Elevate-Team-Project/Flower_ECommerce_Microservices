@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using BuildingBlocks.SharedEntities;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Catalog_Service.Entities
 {
-    public class ProductOccasion
+    public class ProductOccasion:BaseEntity
     {
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }

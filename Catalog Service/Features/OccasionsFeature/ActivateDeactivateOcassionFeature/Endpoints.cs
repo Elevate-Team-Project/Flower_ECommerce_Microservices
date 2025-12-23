@@ -13,8 +13,8 @@ namespace Catalog_Service.Features.OccasionsFeature.UpdateOccasion
                 var command = new ActivateDeactivateOcassionComand(id, dto);
                 var result = await mediator.Send(command);
                 if (!result.IsSuccess)
-                    return Results.NotFound(
-                        EndpointResponse<string>.NotFoundResponse($"Occasion with id {id} not found."));
+                    return Results.BadRequest(
+                        EndpointResponse<string>.ErrorResponse($"Occasion with id {id} not found."));
 
                 return Results.Ok(EndpointResponse<int>.SuccessResponse(result.Data!, result.Message));
             })

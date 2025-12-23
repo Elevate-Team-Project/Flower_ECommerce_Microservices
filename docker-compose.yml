@@ -1,6 +1,105 @@
+version: '3.8'
+
 services:
+  # ==========================================
+  # 1. Shared Database (SQL Server)
+  # ==========================================
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: flower_sql_server
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=MyComplexP@ssw0rd2025
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+    networks:
+      - flower_network
+
+  # ==========================================
+  # 2. Message Broker (RabbitMQ)
+  # ==========================================
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: flower_rabbitmq
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - flower_network
+
+  # ==========================================
+  # 3. Cache (Redis - Containerized Version)
+  # ==========================================
+  redis:
+    image: redis:alpine
+    container_name: flower_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - flower_network
+
+  # ==========================================
+  # 4. Catalog Service
+  # ==========================================
+  catalogservice:
+    image: ${DOCKER_REGISTRY-}catalogservice
+    build:
+      context: .
+      dockerfile: Catalog_Service/Dockerfile
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      # --- OVERRIDES ---
+      # 1. Use the internal Docker SQL Server instead of Localhost/.
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=CatalogDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      
+      # 2. Use the internal Docker RabbitMQ
+      - RabbitMq__Host=rabbitmq
+      
+      # 3. Use the internal Docker Redis (Overrides your Redislabs URL)
+      - Redis__Url=redis:6379
+      - Redis__Password=  # Clear the password because the standard redis:alpine image has no password by default
+    depends_on:
+      - sqlserver
+      - rabbitmq
+      - redis
+    networks:
+      - flower_network
+
+  # ==========================================
+  # 5. Auth Service (ADD THIS)
+  # ==========================================
   authservice:
     image: ${DOCKER_REGISTRY-}authservice
     build:
       context: .
-      dockerfile: Auth Service/Dockerfile
+      # Assuming your folder is named "Auth Service" based on your Dockerfile snippet
+      dockerfile: "Auth Service/Dockerfile" 
+    ports:
+      - "8090:8080"  # Host Port 8090 -> Container Port 8080
+      - "8091:8081"
+    environment:
+      # Override SQL Connection to point to the Docker SQL container
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AuthDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - flower_network
+
+volumes:
+  sql_data:
+  rabbitmq_data:
+  redis_data:
+
+networks:
+  flower_network:
+    driver: bridge
