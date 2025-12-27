@@ -4,6 +4,7 @@ using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Ordering_Service.Entities;
+using Ordering_Service.Features.Orders;
 using Ordering_Service.Features.Orders.CreateOrder;
 using Ordering_Service.Features.Orders.GetOrderDetails;
 using Ordering_Service.Features.Orders.GetUserOrders;
@@ -89,6 +90,7 @@ namespace Ordering_Service
             app.MapGetUserOrdersEndpoints();
             app.MapGetOrderDetailsEndpoints();
             app.MapUpdateOrderStatusEndpoints();
+            app.MapGetOrdersStatusEndpoints();
 
             // Note: Shipment endpoints have been moved to Delivery Service
 

@@ -10,7 +10,7 @@ namespace Ordering_Service.Entities
         public decimal DiscountAmount { get; set; }
         public decimal ShippingCost { get; set; }
         public decimal TotalAmount { get; set; }
-        public string Status { get; set; } = "Pending"; // Pending, Processing, Shipped, Delivered, Cancelled
+        public string Status { get; set; } = "Pending"; 
         public string ShippingAddress { get; set; } = string.Empty;
         public string BillingAddress { get; set; } = string.Empty;
         public string PaymentMethod { get; set; } = string.Empty;
