@@ -1,4 +1,5 @@
 using BuildingBlocks.Interfaces;
+using BuildingBlocks.ServiceClients;
 using FluentValidation;
 using MassTransit;
 using MediatR;
@@ -56,6 +57,9 @@ namespace Ordering_Service
                     cfg.ConfigureEndpoints(context);
                 });
             });
+
+            // Service Clients (HTTP communication with other microservices)
+            builder.Services.AddServiceClients(builder.Configuration);
 
             builder.Services.AddAuthorization(options =>
             {
