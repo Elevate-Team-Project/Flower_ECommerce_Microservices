@@ -9,6 +9,7 @@ using Ordering_Service.Features.Orders.CreateOrder;
 using Ordering_Service.Features.Orders.GetOrderDetails;
 using Ordering_Service.Features.Orders.GetUserOrders;
 using Ordering_Service.Features.Orders.UpdateOrderStatus;
+using Ordering_Service.Features.Orders.ViewMyOrders;
 using Ordering_Service.Infrastructure;
 using Ordering_Service.Infrastructure.Data;
 using Ordering_Service.Infrastructure.UnitOfWork;
@@ -93,7 +94,7 @@ namespace Ordering_Service
             app.MapGetUserOrdersEndpoints();
             app.MapGetOrderDetailsEndpoints();
             app.MapUpdateOrderStatusEndpoints();
-
+            app.MapViewMyOrdersEndpoints();
             // Note: Shipment endpoints have been moved to Delivery Service
 
             await app.RunAsync();
