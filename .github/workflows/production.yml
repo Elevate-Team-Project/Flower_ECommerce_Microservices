@@ -7,8 +7,8 @@ on:
 
 env:
   DOCKER_REGISTRY: giftshop90
-  # اسم الريبو الوحيد الخاص بالتيم
-  DOCKER_REPOSITORY: Elites
+  # The team's single repository (Must be lowercase)
+  DOCKER_REPOSITORY: elites
 
 jobs:
   # ============================================
@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         service:
-          # هنا بنحدد اسم "التاج" اللي هيميز الخدمة جوا الريبو
+          # Defining the unique "tag" for the service within the repo
           - name: auth
             dockerfile: "Auth Service/Dockerfile"
             context: .
@@ -73,7 +73,7 @@ jobs:
           context: ${{ matrix.service.context }}
           file: ${{ matrix.service.dockerfile }}
           push: true
-          # 🔥 الرفع على ريبو Elites مع تغيير التاج
+          # 🔥 Push to 'elites' repo with tag modification
           tags: |
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ matrix.service.tag_name }}-latest
             ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ matrix.service.tag_name }}-${{ github.sha }}
@@ -81,7 +81,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ============================================
-  # Deploy to Production (كما هو بدون تغيير)
+  # Deploy to Production
   # ============================================
   deploy:
     runs-on: ubuntu-latest
