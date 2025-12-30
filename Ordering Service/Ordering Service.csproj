@@ -36,6 +36,20 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.60.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.60.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.25.2" />
+    <PackageReference Include="Grpc.Tools" Version="2.60.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Server: expose Ordering gRPC service -->
+    <Protobuf Include="..\BuildingBlocks\Protos\ordering.proto" GrpcServices="Server" Link="Protos\ordering.proto" />
+    <!-- Client: consume Catalog gRPC service -->
+    <Protobuf Include="..\BuildingBlocks\Protos\catalog.proto" GrpcServices="Client" Link="Protos\catalog.proto" />
   </ItemGroup>
 
   <ItemGroup>
