@@ -79,36 +79,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ✅ التصحيح الأول: استخدام الباسورد لنقل الملف
       - name: Copy compose file to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SSH_PASSWORD }} # <--- هنا التعديل
           source: "docker-compose.prod.yml"
-          target: "/opt/flower-shop"
+          target: "/opt/flower-shop/" # تأكدت من وجود / في النهاية
 
+      # ✅ التصحيح الثاني: استخدام الباسورد لتنفيذ الأوامر
       - name: Deploy to Docker Swarm
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SSH_PASSWORD }} # <--- هنا التعديل
           script: |
+            # Create directory if not exists
+            mkdir -p /opt/flower-shop
+            
             # Login to Docker Hub to pull images
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
             
             # Navigate to deployment directory
             cd /opt/flower-shop
             
-            # Pull latest images
+            # Deploy/Update the stack with zero-downtime
+            # Note: docker stack deploy automatically pulls needed images if configured correctly, 
+            # but explicit pull ensures we get the very latest
             docker compose -f docker-compose.prod.yml pull
             
-            # Deploy/Update the stack with zero-downtime
             docker stack deploy -c docker-compose.prod.yml --with-registry-auth flower-shop
             
-            # Wait for services to stabilize
-            sleep 30
-            
-            # Show service status
-            docker service ls --filter name=flower-shop
+            # Prune unused images to save space
+            docker image prune -f
