@@ -7,10 +7,12 @@ on:
 
 env:
   DOCKER_REGISTRY: giftshop90
+  # اسم الريبو الوحيد الخاص بالتيم
+  DOCKER_REPOSITORY: Elites
 
 jobs:
   # ============================================
-  # Build and Push All Microservices in Parallel
+  # Build and Push (Single Repo Strategy)
   # ============================================
   build:
     runs-on: ubuntu-latest
@@ -18,30 +20,39 @@ jobs:
       fail-fast: false
       matrix:
         service:
+          # هنا بنحدد اسم "التاج" اللي هيميز الخدمة جوا الريبو
           - name: auth
             dockerfile: "Auth Service/Dockerfile"
             context: .
+            tag_name: "auth" 
           - name: catalog
             dockerfile: "Catalog Service/Dockerfile"
             context: .
+            tag_name: "catalog"
           - name: cart
             dockerfile: "Cart Service/Dockerfile"
             context: .
+            tag_name: "cart"
           - name: ordering
             dockerfile: "Ordering Service/Dockerfile"
             context: .
+            tag_name: "ordering"
           - name: payment
             dockerfile: "Payment Service/Dockerfile"
             context: .
+            tag_name: "payment"
           - name: notification
             dockerfile: "Notification Service/Dockerfile"
             context: .
+            tag_name: "notification"
           - name: audit
             dockerfile: "Audit Service/Dockerfile"
             context: .
+            tag_name: "audit"
           - name: gateway
             dockerfile: "API Gateway/Dockerfile"
             context: .
+            tag_name: "gateway"
 
     steps:
       - name: Checkout code
@@ -56,20 +67,21 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push ${{ matrix.service.name }}
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.service.context }}
           file: ${{ matrix.service.dockerfile }}
           push: true
+          # 🔥 الرفع على ريبو Elites مع تغيير التاج
           tags: |
-            ${{ env.DOCKER_REGISTRY }}/${{ matrix.service.name }}:latest
-            ${{ env.DOCKER_REGISTRY }}/${{ matrix.service.name }}:${{ github.sha }}
+            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ matrix.service.tag_name }}-latest
+            ${{ env.DOCKER_REGISTRY }}/${{ env.DOCKER_REPOSITORY }}:${{ matrix.service.tag_name }}-${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   # ============================================
-  # Deploy to Production Server via SSH
+  # Deploy to Production (كما هو بدون تغيير)
   # ============================================
   deploy:
     runs-on: ubuntu-latest
@@ -79,39 +91,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ✅ التصحيح الأول: استخدام الباسورد لنقل الملف
       - name: Copy compose file to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }} # <--- هنا التعديل
+          password: ${{ secrets.SSH_PASSWORD }}
           source: "docker-compose.prod.yml"
-          target: "/opt/flower-shop/" # تأكدت من وجود / في النهاية
+          target: "/opt/Elites/"
 
-      # ✅ التصحيح الثاني: استخدام الباسورد لتنفيذ الأوامر
       - name: Deploy to Docker Swarm
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
-          password: ${{ secrets.SSH_PASSWORD }} # <--- هنا التعديل
+          password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            # Create directory if not exists
-            mkdir -p /opt/flower-shop
-            
-            # Login to Docker Hub to pull images
+            mkdir -p /opt/Elites
             echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            cd /opt/Elites
             
-            # Navigate to deployment directory
-            cd /opt/flower-shop
-            
-            # Deploy/Update the stack with zero-downtime
-            # Note: docker stack deploy automatically pulls needed images if configured correctly, 
-            # but explicit pull ensures we get the very latest
+            # Pull latest images
             docker compose -f docker-compose.prod.yml pull
             
-            docker stack deploy -c docker-compose.prod.yml --with-registry-auth flower-shop
+            # Deploy Stack named "Elites"
+            docker stack deploy -c docker-compose.prod.yml --with-registry-auth Elites
             
-            # Prune unused images to save space
             docker image prune -f

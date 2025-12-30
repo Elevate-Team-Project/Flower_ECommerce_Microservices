@@ -3,6 +3,7 @@ version: '3.8'
 # ============================================
 # Flower E-Commerce Production Stack
 # Optimized for Docker Swarm / Portainer
+# Team: Elites
 # ============================================
 
 services:
@@ -10,14 +11,14 @@ services:
   # API Gateway
   # ==========================================
   gateway:
-    image: giftshop90/gateway:latest
+    image: giftshop90/Elites:gateway-latest  # <--- تعديل الصورة والتاج
     ports:
       - "8888:8080"
       - "8889:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
     networks:
-      - flower_network
+      - elites_network  # <--- تعديل اسم الشبكة
     deploy:
       replicas: 1
       update_config:
@@ -45,7 +46,7 @@ services:
   # Auth (Identity) Service
   # ==========================================
   auth:
-    image: giftshop90/auth:latest
+    image: giftshop90/Elites:auth-latest  # <--- تعديل الصورة والتاج
     ports:
       - "8090:8080"
       - "8091:8081"
@@ -57,7 +58,7 @@ services:
       - RabbitMq__Username=admin
       - RabbitMq__Password=g19HBzycmCfePY6MREFm
     networks:
-      - flower_network
+      - elites_network  # <--- تعديل اسم الشبكة
     deploy:
       replicas: 1
       update_config:
@@ -85,7 +86,7 @@ services:
   # Catalog Service
   # ==========================================
   catalog:
-    image: giftshop90/catalog:latest
+    image: giftshop90/Elites:catalog-latest  # <--- تعديل الصورة والتاج
     ports:
       - "8082:8080"
       - "8083:8081"
@@ -98,7 +99,7 @@ services:
       - RabbitMq__Password=g19HBzycmCfePY6MREFm
       - Redis__Url=72.61.102.216:6379,password=g19HBzycmCfePY6MREFm
     networks:
-      - flower_network
+      - elites_network  # <--- تعديل اسم الشبكة
     deploy:
       replicas: 1
       update_config:
@@ -126,7 +127,7 @@ services:
   # Cart Service
   # ==========================================
   cart:
-    image: giftshop90/cart:latest
+    image: giftshop90/Elites:cart-latest  # <--- تعديل الصورة والتاج
     ports:
       - "8092:8080"
       - "8093:8081"
@@ -139,7 +140,7 @@ services:
       - RabbitMq__Password=g19HBzycmCfePY6MREFm
       - Redis__Url=72.61.102.216:6379,password=g19HBzycmCfePY6MREFm
     networks:
-      - flower_network
+      - elites_network  # <--- تعديل اسم الشبكة
     deploy:
       replicas: 1
       update_config:
@@ -167,7 +168,7 @@ services:
   # Ordering Service
   # ==========================================
   ordering:
-    image: giftshop90/ordering:latest
+    image: giftshop90/Elites:ordering-latest  # <--- تعديل الصورة والتاج
     ports:
       - "8094:8080"
       - "8095:8081"
@@ -179,7 +180,7 @@ services:
       - RabbitMq__Username=admin
       - RabbitMq__Password=g19HBzycmCfePY6MREFm
     networks:
-      - flower_network
+      - elites_network  # <--- تعديل اسم الشبكة
     deploy:
       replicas: 1
       update_config:
@@ -207,7 +208,7 @@ services:
   # Payment Service
   # ==========================================
   payment:
-    image: giftshop90/payment:latest
+    image: giftshop90/Elites:payment-latest  # <--- تعديل الصورة والتاج
     ports:
       - "8098:8080"
       - "8099:8081"
@@ -219,7 +220,7 @@ services:
       - RabbitMq__Username=admin
       - RabbitMq__Password=g19HBzycmCfePY6MREFm
     networks:
-      - flower_network
+      - elites_network  # <--- تعديل اسم الشبكة
     deploy:
       replicas: 1
       update_config:
@@ -247,7 +248,7 @@ services:
   # Notification Service
   # ==========================================
   notification:
-    image: giftshop90/notification:latest
+    image: giftshop90/Elites:notification-latest  # <--- تعديل الصورة والتاج
     ports:
       - "8100:8080"
       - "8101:8081"
@@ -258,7 +259,7 @@ services:
       - RabbitMq__Username=admin
       - RabbitMq__Password=g19HBzycmCfePY6MREFm
     networks:
-      - flower_network
+      - elites_network  # <--- تعديل اسم الشبكة
     deploy:
       replicas: 1
       update_config:
@@ -286,7 +287,7 @@ services:
   # Audit Service
   # ==========================================
   audit:
-    image: giftshop90/audit:latest
+    image: giftshop90/Elites:audit-latest  # <--- تعديل الصورة والتاج
     ports:
       - "8102:8080"
       - "8103:8081"
@@ -298,7 +299,7 @@ services:
       - RabbitMq__Username=admin
       - RabbitMq__Password=g19HBzycmCfePY6MREFm
     networks:
-      - flower_network
+      - elites_network  # <--- تعديل اسم الشبكة
     deploy:
       replicas: 1
       update_config:
@@ -326,6 +327,6 @@ services:
 # Networks
 # ============================================
 networks:
-  flower_network:
+  elites_network:  # <--- تم تغيير الاسم هنا ليتطابق مع الخدمات
     driver: overlay
     attachable: true
