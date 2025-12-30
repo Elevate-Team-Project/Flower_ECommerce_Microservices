@@ -12,16 +12,17 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["API Gateway.csproj", "."]
-RUN dotnet restore "./API Gateway.csproj"
+COPY ["API Gateway/API Gateway.csproj", "API Gateway/"]
+COPY ["BuildingBlocks/BuildingBlocks.csproj", "BuildingBlocks/"]
+RUN dotnet restore "API Gateway/API Gateway.csproj"
 COPY . .
-WORKDIR "/src/."
-RUN dotnet build "./API Gateway.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/API Gateway"
+RUN dotnet build "API Gateway.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./API Gateway.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "API Gateway.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
