@@ -1,0 +1,331 @@
+version: '3.8'
+
+# ============================================
+# Flower E-Commerce Production Stack
+# Optimized for Docker Swarm / Portainer
+# ============================================
+
+services:
+  # ==========================================
+  # API Gateway
+  # ==========================================
+  gateway:
+    image: giftshop90/gateway:latest
+    ports:
+      - "8888:8080"
+      - "8889:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    networks:
+      - flower_network
+    deploy:
+      replicas: 1
+      update_config:
+        order: start-first
+        delay: 10s
+        parallelism: 1
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ==========================================
+  # Auth (Identity) Service
+  # ==========================================
+  auth:
+    image: giftshop90/auth:latest
+    ports:
+      - "8090:8080"
+      - "8091:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=72.61.102.216,1433;Database=IdentityDB;User Id=sa;Password=g19HBzycmCfePY6MREFm;TrustServerCertificate=True;
+      - RabbitMq__Host=72.61.102.216
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=admin
+      - RabbitMq__Password=g19HBzycmCfePY6MREFm
+    networks:
+      - flower_network
+    deploy:
+      replicas: 1
+      update_config:
+        order: start-first
+        delay: 10s
+        parallelism: 1
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ==========================================
+  # Catalog Service
+  # ==========================================
+  catalog:
+    image: giftshop90/catalog:latest
+    ports:
+      - "8082:8080"
+      - "8083:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=72.61.102.216,1433;Database=CatalogDB;User Id=sa;Password=g19HBzycmCfePY6MREFm;TrustServerCertificate=True;
+      - RabbitMq__Host=72.61.102.216
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=admin
+      - RabbitMq__Password=g19HBzycmCfePY6MREFm
+      - Redis__Url=72.61.102.216:6379,password=g19HBzycmCfePY6MREFm
+    networks:
+      - flower_network
+    deploy:
+      replicas: 1
+      update_config:
+        order: start-first
+        delay: 10s
+        parallelism: 1
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ==========================================
+  # Cart Service
+  # ==========================================
+  cart:
+    image: giftshop90/cart:latest
+    ports:
+      - "8092:8080"
+      - "8093:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=72.61.102.216,1433;Database=CartDB;User Id=sa;Password=g19HBzycmCfePY6MREFm;TrustServerCertificate=True;
+      - RabbitMq__Host=72.61.102.216
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=admin
+      - RabbitMq__Password=g19HBzycmCfePY6MREFm
+      - Redis__Url=72.61.102.216:6379,password=g19HBzycmCfePY6MREFm
+    networks:
+      - flower_network
+    deploy:
+      replicas: 1
+      update_config:
+        order: start-first
+        delay: 10s
+        parallelism: 1
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ==========================================
+  # Ordering Service
+  # ==========================================
+  ordering:
+    image: giftshop90/ordering:latest
+    ports:
+      - "8094:8080"
+      - "8095:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=72.61.102.216,1433;Database=OrderingDB;User Id=sa;Password=g19HBzycmCfePY6MREFm;TrustServerCertificate=True;
+      - RabbitMq__Host=72.61.102.216
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=admin
+      - RabbitMq__Password=g19HBzycmCfePY6MREFm
+    networks:
+      - flower_network
+    deploy:
+      replicas: 1
+      update_config:
+        order: start-first
+        delay: 10s
+        parallelism: 1
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ==========================================
+  # Payment Service
+  # ==========================================
+  payment:
+    image: giftshop90/payment:latest
+    ports:
+      - "8098:8080"
+      - "8099:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=72.61.102.216,1433;Database=PaymentDB;User Id=sa;Password=g19HBzycmCfePY6MREFm;TrustServerCertificate=True;
+      - RabbitMq__Host=72.61.102.216
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=admin
+      - RabbitMq__Password=g19HBzycmCfePY6MREFm
+    networks:
+      - flower_network
+    deploy:
+      replicas: 1
+      update_config:
+        order: start-first
+        delay: 10s
+        parallelism: 1
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ==========================================
+  # Notification Service
+  # ==========================================
+  notification:
+    image: giftshop90/notification:latest
+    ports:
+      - "8100:8080"
+      - "8101:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - RabbitMq__Host=72.61.102.216
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=admin
+      - RabbitMq__Password=g19HBzycmCfePY6MREFm
+    networks:
+      - flower_network
+    deploy:
+      replicas: 1
+      update_config:
+        order: start-first
+        delay: 10s
+        parallelism: 1
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ==========================================
+  # Audit Service
+  # ==========================================
+  audit:
+    image: giftshop90/audit:latest
+    ports:
+      - "8102:8080"
+      - "8103:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__MongoDb=mongodb://72.61.102.216:27017
+      - RabbitMq__Host=72.61.102.216
+      - RabbitMq__Port=5672
+      - RabbitMq__Username=admin
+      - RabbitMq__Password=g19HBzycmCfePY6MREFm
+    networks:
+      - flower_network
+    deploy:
+      replicas: 1
+      update_config:
+        order: start-first
+        delay: 10s
+        parallelism: 1
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  flower_network:
+    driver: overlay
+    attachable: true
