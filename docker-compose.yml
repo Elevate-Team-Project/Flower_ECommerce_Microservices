@@ -1,6 +1,8 @@
+version: '3.8'
+
 services:
   # ==========================================
-  # 1. Shared Database (SQL Server)
+  # 1. Infrastructure: SQL Server
   # ==========================================
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -16,13 +18,13 @@ services:
       - flower_network
 
   # ==========================================
-  # 2. Message Broker (RabbitMQ)
+  # 2. Infrastructure: RabbitMQ
   # ==========================================
   rabbitmq:
     image: rabbitmq:3-management
     container_name: flower_rabbitmq
     ports:
-      - "5672:5672" # AMQP
+      - "5672:5672"   # AMQP
       - "15672:15672" # Management UI
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
@@ -30,7 +32,7 @@ services:
       - flower_network
 
   # ==========================================
-  # 3. Cache (Redis - Containerized Version)
+  # 3. Infrastructure: Redis
   # ==========================================
   redis:
     image: redis:alpine
@@ -43,7 +45,20 @@ services:
       - flower_network
 
   # ==========================================
-  # 4. Catalog Service
+  # 4. Infrastructure: MongoDB (For Audit Service)
+  # ==========================================
+  mongo:
+    image: mongo:latest
+    container_name: flower_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - flower_network
+
+  # ==========================================
+  # 5. Service: Catalog Service
   # ==========================================
   catalogservice:
     image: ${DOCKER_REGISTRY-}catalogservice
@@ -51,19 +66,12 @@ services:
       context: .
       dockerfile: "Catalog Service/Dockerfile"
     ports:
-      - "8080:8080"
-      - "8081:8081"
+      - "8082:8080"
+      - "8083:8081"
     environment:
-      # --- OVERRIDES ---
-      # 1. Use the internal Docker SQL Server instead of Localhost/.
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=CatalogDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
-
-      # 2. Use the internal Docker RabbitMQ
       - RabbitMq__Host=rabbitmq
-
-      # 3. Use the internal Docker Redis (Overrides your Redislabs URL)
       - Redis__Url=redis:6379
-      - Redis__Password= # Clear the password because the standard redis:alpine image has no password by default
     depends_on:
       - sqlserver
       - rabbitmq
@@ -72,20 +80,18 @@ services:
       - flower_network
 
   # ==========================================
-  # 5. Auth Service (ADD THIS)
+  # 6. Service: Auth (Identity) Service
   # ==========================================
   authservice:
     image: ${DOCKER_REGISTRY-}authservice
     build:
       context: .
-      # Assuming your folder is named "Auth Service" based on your Dockerfile snippet
       dockerfile: "Auth Service/Dockerfile"
     ports:
-      - "8090:8080" # Host Port 8090 -> Container Port 8080
+      - "8090:8080"
       - "8091:8081"
     environment:
-      # Override SQL Connection to point to the Docker SQL container
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AuthDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=IdentityDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
       - RabbitMq__Host=rabbitmq
     depends_on:
       - sqlserver
@@ -93,11 +99,132 @@ services:
     networks:
       - flower_network
 
+  # ==========================================
+  # 7. Service: Cart Service
+  # ==========================================
+  cartservice:
+    image: ${DOCKER_REGISTRY-}cartservice
+    build:
+      context: .
+      dockerfile: "Cart Service/Dockerfile"
+    ports:
+      - "8092:8080"
+      - "8093:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=CartDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+      - Redis__Url=redis:6379
+    depends_on:
+      - sqlserver
+      - rabbitmq
+      - redis
+    networks:
+      - flower_network
+
+  # ==========================================
+  # 8. Service: Ordering Service
+  # ==========================================
+  orderingservice:
+    image: ${DOCKER_REGISTRY-}orderingservice
+    build:
+      context: .
+      dockerfile: "Ordering Service/Dockerfile"
+    ports:
+      - "8094:8080"
+      - "8095:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderingDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - flower_network
+
+  # ==========================================
+  # 10. Service: Payment Service
+  # ==========================================
+  paymentservice:
+    image: ${DOCKER_REGISTRY-}paymentservice
+    build:
+      context: .
+      dockerfile: "Payment Service/Dockerfile"
+    ports:
+      - "8098:8080"
+      - "8099:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PaymentDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - flower_network
+
+  # ==========================================
+  # 11. Service: Notification Service
+  # ==========================================
+  notificationservice:
+    image: ${DOCKER_REGISTRY-}notificationservice
+    build:
+      context: .
+      dockerfile: "Notification Service/Dockerfile"
+    ports:
+      - "8100:8080"
+      - "8101:8081"
+    environment:
+      - RabbitMq__Host=rabbitmq
+    depends_on:
+      - rabbitmq
+    networks:
+      - flower_network
+
+  # ==========================================
+  # 12. Service: Audit Service
+  # ==========================================
+  auditservice:
+    image: ${DOCKER_REGISTRY-}auditservice
+    build:
+      context: .
+      dockerfile: "Audit Service/Dockerfile"
+    ports:
+      - "8102:8080"
+      - "8103:8081"
+    environment:
+      - ConnectionStrings__MongoDb=mongodb://mongo:27017
+      - RabbitMq__Host=rabbitmq
+    depends_on:
+      - mongo
+      - rabbitmq
+    networks:
+      - flower_network
+
+  # ==========================================
+  # 13. API Gateway
+  # ==========================================
+  apigateway:
+    image: ${DOCKER_REGISTRY-}apigateway
+    build:
+      context: .
+      dockerfile: "API Gateway/Dockerfile"
+    ports:
+      - "8888:8080"
+      - "8889:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - authservice
+      - catalogservice
+      - cartservice
+      - orderingservice
+    networks:
+      - flower_network
+
 volumes:
   sql_data:
   rabbitmq_data:
   redis_data:
-
+  mongo_data:
 
 networks:
   flower_network:

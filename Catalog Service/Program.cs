@@ -25,6 +25,7 @@ using Catalog_Service.Features.CategoriesFeature.CreateCategory;
 using Catalog_Service.Infrastructure.UnitOfWork;
 using Catalog_Service.Features.OccasionsFeature.UpdateOccasion;
 using Catalog_Service.Features.CategoriesFeature.GetActiveCategoryFeature;
+using Catalog_Service.GrpcServices;
 namespace Catalog_Service
 {
     public class Program
@@ -188,6 +189,9 @@ namespace Catalog_Service
 
                 builder.Services.AddAuthorization();
 
+                // Add gRPC service
+                builder.Services.AddGrpc();
+
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen(options =>
                 {
@@ -255,6 +259,9 @@ namespace Catalog_Service
                 app.UseAuthentication();
                 app.UseAuthorization();
                 app.MapAllEndpoints();
+
+                // Map gRPC service
+                app.MapGrpcService<CatalogGrpcService>();
 
                 // Uncomment once you have the Middleware class
                 // app.UseMiddleware<TransactionMiddleware>();

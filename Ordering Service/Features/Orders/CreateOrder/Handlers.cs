@@ -1,5 +1,5 @@
+using BuildingBlocks.Grpc;
 using BuildingBlocks.Interfaces;
-using BuildingBlocks.ServiceClients;
 using MediatR;
 using Ordering_Service.Entities;
 using Ordering_Service.Features.Shared;
@@ -10,34 +10,54 @@ namespace Ordering_Service.Features.Orders.CreateOrder
     {
         private readonly IBaseRepository<Order> _orderRepository;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly ICatalogServiceClient _catalogClient;
+        private readonly CatalogGrpc.CatalogGrpcClient _catalogClient;
+        private readonly ILogger<CreateOrderHandler> _logger;
 
         public CreateOrderHandler(
             IBaseRepository<Order> orderRepository,
             IUnitOfWork unitOfWork,
-            ICatalogServiceClient catalogClient)
+            CatalogGrpc.CatalogGrpcClient catalogClient,
+            ILogger<CreateOrderHandler> logger)
         {
             _orderRepository = orderRepository;
             _unitOfWork = unitOfWork;
             _catalogClient = catalogClient;
+            _logger = logger;
         }
 
         public async Task<EndpointResponse<CreateOrderDto>> Handle(
             CreateOrderCommand request,
             CancellationToken cancellationToken)
         {
-            // Validate products exist and get current prices from Catalog Service
+            // Validate products exist and get current prices from Catalog Service via gRPC
             var productIds = request.Items.Select(i => i.ProductId).ToList();
-            var productsResponse = await _catalogClient.GetProductsByIdsAsync(productIds, cancellationToken);
             
-            if (!productsResponse.IsSuccess)
+            var grpcRequest = new GetProductsByIdsRequest();
+            grpcRequest.ProductIds.AddRange(productIds);
+            
+            ProductsResponse productsResponse;
+            try
+            {
+                productsResponse = await _catalogClient.GetProductsByIdsAsync(
+                    grpcRequest, 
+                    cancellationToken: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to call Catalog gRPC service");
+                return EndpointResponse<CreateOrderDto>.ErrorResponse(
+                    $"Failed to validate products: {ex.Message}", 
+                    503);
+            }
+            
+            if (!productsResponse.Success)
             {
                 return EndpointResponse<CreateOrderDto>.ErrorResponse(
                     $"Failed to validate products: {productsResponse.ErrorMessage}", 
-                    productsResponse.StatusCode);
+                    400);
             }
 
-            var products = productsResponse.Data!.ToDictionary(p => p.Id);
+            var products = productsResponse.Products.ToDictionary(p => p.Id);
             
             // Validate all products exist
             var missingProducts = productIds.Where(id => !products.ContainsKey(id)).ToList();
@@ -64,7 +84,9 @@ namespace Ordering_Service.Features.Orders.CreateOrder
             var orderItems = request.Items.Select(i =>
             {
                 var catalogProduct = products[i.ProductId];
-                var currentPrice = catalogProduct.DiscountedPrice ?? catalogProduct.Price;
+                var currentPrice = catalogProduct.HasDiscount 
+                    ? (decimal)catalogProduct.DiscountedPrice 
+                    : (decimal)catalogProduct.Price;
                 return new OrderItem
                 {
                     ProductId = i.ProductId,
@@ -113,4 +135,3 @@ namespace Ordering_Service.Features.Orders.CreateOrder
         }
     }
 }
-
