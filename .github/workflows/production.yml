@@ -53,6 +53,10 @@ jobs:
             dockerfile: "API Gateway/Dockerfile"
             context: .
             tag_name: "gateway"
+          - name: delivery
+            dockerfile: "Delivery Service/Dockerfile"
+            context: .
+            tag_name: "delivery"
 
     steps:
       - name: Checkout code

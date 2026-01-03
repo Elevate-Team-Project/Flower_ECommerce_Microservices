@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Delivery_Service</RootNamespace>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>.</DockerfileContext>
+    <UserSecretsId>dade792c-e418-4ed9-8dc0-db0fea6abd7c</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
