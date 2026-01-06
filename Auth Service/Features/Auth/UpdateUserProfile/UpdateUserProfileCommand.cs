@@ -1,4 +1,5 @@
 ﻿using Auth.Features.Auth.UpdateUserProfile;
+using Auth_Service.Features.Shared;
 using MediatR;
 
 public record UpdateUserProfileCommand(
@@ -7,5 +8,4 @@ public record UpdateUserProfileCommand(
     string? LastName,
     string? PhoneNumber,
     string? ProfileImage
- 
-) : IRequest<UpdateUserProfileResponse>;
+) : IRequest<RequestResponse<UpdateUserProfileResponse>>;
