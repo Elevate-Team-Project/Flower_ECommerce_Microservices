@@ -101,7 +101,7 @@ namespace Delivery_Service
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseAuthorization();
 
             // Map Address Endpoints
