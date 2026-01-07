@@ -26,7 +26,7 @@ namespace Payment_Service
             //app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
+            app.MapGet("/", () => "Payment Service is running...");
             app.Run();
         }
     }

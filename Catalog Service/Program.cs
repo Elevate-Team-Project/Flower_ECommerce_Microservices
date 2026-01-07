@@ -259,7 +259,7 @@ namespace Catalog_Service
                 app.UseAuthentication();
                 app.UseAuthorization();
                 app.MapAllEndpoints();
-
+                app.MapGet("/", () => "Catalog Service is running...");
                 // Map gRPC service
                 app.MapGrpcService<CatalogGrpcService>();
 

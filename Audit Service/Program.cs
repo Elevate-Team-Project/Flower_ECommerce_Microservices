@@ -26,8 +26,8 @@ namespace Audit_Service
             //app.UseHttpsRedirection();
 
             app.UseAuthorization();
+            app.MapGet("/", () => "Audit Service is running...");
 
-            
             app.Run();
         }
     }

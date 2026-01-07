@@ -24,7 +24,7 @@ namespace Notification_Service
             }
 
             //app.UseHttpsRedirection();
-
+            app.MapGet("/", () => "Notification Service is running...");
             app.UseAuthorization();
 
             app.Run();

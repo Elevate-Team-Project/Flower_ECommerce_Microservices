@@ -166,7 +166,7 @@ namespace Auth_Service
             app.UseAuthorization();
 
             app.MapControllers();
-
+            app.MapGet("/", () => "Auth Service is running...");
             await app.RunAsync();
         }
     }

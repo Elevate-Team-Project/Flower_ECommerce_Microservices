@@ -116,7 +116,7 @@ namespace Ordering_Service
             app.MapGetUserOrdersEndpoints();
             app.MapGetOrderDetailsEndpoints();
             app.MapUpdateOrderStatusEndpoints();
-
+            app.MapGet("/", () => "Ordering Service is running...");
             await app.RunAsync();
         }
     }
