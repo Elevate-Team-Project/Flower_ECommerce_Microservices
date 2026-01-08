@@ -1,0 +1,146 @@
+# Flower E-Commerce Microservices - API Endpoints
+
+**Base URL:** `http://72.61.102.216:8888`
+
+---
+
+## 🔐 Auth Service (Gateway: `/api/auth`)
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| POST | `http://72.61.102.216:8888/api/auth/api/Auth/register` | Register a new user | JSON body: `RegisterDto` (email, password, etc.) |
+| POST | `http://72.61.102.216:8888/api/auth/api/Auth/login` | Authenticate user and get JWT | JSON body: `LoginCommand` (email, password) |
+| GET | `http://72.61.102.216:8888/api/auth/api/Auth/user-info` | Get current authenticated user info | Bearer Token required |
+| POST | `http://72.61.102.216:8888/api/auth/api/Auth/change-password` | Change user password | Bearer Token + JSON body: `ChangePasswordCommand` |
+| PUT | `http://72.61.102.216:8888/api/auth/api/Auth/update-profile` | Update user profile | Bearer Token + Form data: `UpdateUserProfileRequest` |
+| POST | `http://72.61.102.216:8888/api/auth/api/Auth/forget-password` | Request password reset OTP | JSON body: `SendOtpCommand` (email) |
+| POST | `http://72.61.102.216:8888/api/auth/api/Auth/verify-otp` | Verify OTP code | JSON body: `VerifyOtpCommand` (email, otp) |
+| POST | `http://72.61.102.216:8888/api/auth/api/Auth/reset-password` | Reset password with OTP | JSON body: `ResetPasswordCommand` (email, otp, newPassword) |
+| POST | `http://72.61.102.216:8888/api/auth/api/Auth/logout` | Logout user | Bearer Token required |
+
+---
+
+## 📦 Catalog Service (Gateway: `/api/catalog`)
+
+### Categories
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| GET | `http://72.61.102.216:8888/api/catalog/api/v1/categories` | Get all categories | None |
+| POST | `http://72.61.102.216:8888/api/catalog/api/categories` | Create a new category | JSON body: category data |
+| PUT | `http://72.61.102.216:8888/api/catalog/api/v1/categories/{id}` | Update a category | Path: `id` (int) + JSON body |
+| DELETE | `http://72.61.102.216:8888/api/catalog/categories/{id}` | Delete a category | Path: `id` (int) |
+| GET | `http://72.61.102.216:8888/api/catalog/api/categories/active` | Get active categories | None |
+| PATCH | `http://72.61.102.216:8888/api/catalog/api/v1/categories/{id}/activate` | Activate a category | Path: `id` (int) |
+| PATCH | `http://72.61.102.216:8888/api/catalog/api/v1/categories/{id}/deactivate` | Deactivate a category | Path: `id` (int) |
+
+### Products
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| GET | `http://72.61.102.216:8888/api/catalog/api/products/{id}` | Get product details by ID | Path: `id` (int) |
+| GET | `http://72.61.102.216:8888/api/catalog/api/products/best-sellers` | Get best selling products | None |
+| POST | `http://72.61.102.216:8888/api/catalog/api/v1/products/search` | Search products | JSON body: search criteria |
+| POST | `http://72.61.102.216:8888/api/catalog/api/v1/products/exists` | Check if products exist | JSON body: product IDs |
+
+### Occasions
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| GET | `http://72.61.102.216:8888/api/catalog/api/catalog/occasions` | Get all occasions | None |
+| POST | `http://72.61.102.216:8888/api/catalog/api/v1/occasions` | Create a new occasion | JSON body: occasion data |
+| PUT | `http://72.61.102.216:8888/api/catalog/api/occasions/{id}` | Update an occasion | Path: `id` (int) + JSON body |
+| DELETE | `http://72.61.102.216:8888/api/catalog/occasions/{id}` | Delete an occasion | Path: `id` (int) |
+| PUT | `http://72.61.102.216:8888/api/catalog/api/adoccasions/{id}` | Activate/Deactivate occasion | Path: `id` (int) + JSON body |
+
+---
+
+## 🛒 Cart Service (Gateway: `/api/cart`)
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| GET | `http://72.61.102.216:8888/api/cart/health` | Health check endpoint | None |
+| GET | `http://72.61.102.216:8888/api/cart/carts` | Get all carts | None |
+
+> ⚠️ **Note:** Cart Service has placeholder endpoint files. Additional cart operations (AddToCart, Checkout, etc.) are not yet implemented.
+
+---
+
+## 📋 Ordering Service (Gateway: `/api/orders`)
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| POST | `http://72.61.102.216:8888/api/orders/api/orders` | Create a new order | JSON body: order data |
+| GET | `http://72.61.102.216:8888/api/orders/api/orders/{orderId}` | Get order details | Path: `orderId` (int) |
+| GET | `http://72.61.102.216:8888/api/orders/api/orders/user/{userId}` | Get orders by user ID | Path: `userId` (string) |
+| PUT | `http://72.61.102.216:8888/api/orders/api/orders/{orderId}/status` | Update order status | Path: `orderId` (int) + JSON body |
+
+---
+
+## 🚚 Delivery Service (Gateway: `/api/delivery`)
+
+### Addresses
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| POST | `http://72.61.102.216:8888/api/delivery/api/addresses` | Create a new address | JSON body: `CreateAddressCommand` |
+| GET | `http://72.61.102.216:8888/api/delivery/api/addresses/user/{userId}` | Get user's addresses | Path: `userId` (string) |
+| PUT | `http://72.61.102.216:8888/api/delivery/api/addresses/{addressId}` | Update an address | Path: `addressId` (int) + JSON body |
+| DELETE | `http://72.61.102.216:8888/api/delivery/api/addresses/{addressId}` | Delete an address | Path: `addressId` (int) + Query: `userId` |
+| PUT | `http://72.61.102.216:8888/api/delivery/api/addresses/{addressId}/default` | Set default address | Path: `addressId` (int) + Query: `userId` |
+
+### Shipments
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| POST | `http://72.61.102.216:8888/api/delivery/api/shipments` | Create a new shipment | JSON body: `CreateShipmentCommand` |
+| GET | `http://72.61.102.216:8888/api/delivery/api/shipments/{shipmentId}` | Get shipment by ID | Path: `shipmentId` (int) |
+| GET | `http://72.61.102.216:8888/api/delivery/api/shipments/tracking/{trackingNumber}` | Get shipment by tracking | Path: `trackingNumber` (string) |
+| GET | `http://72.61.102.216:8888/api/delivery/api/shipments/order/{orderId}` | Get shipment by order ID | Path: `orderId` (int) |
+| PUT | `http://72.61.102.216:8888/api/delivery/api/shipments/{shipmentId}/status` | Update shipment status | Path: `shipmentId` (int) + JSON body |
+
+---
+
+## 📊 Audit Service (Gateway: `/api/audit`)
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| GET | `http://72.61.102.216:8888/api/audit/` | Health check | None |
+
+> ⚠️ **Note:** Audit Service only has a health check endpoint. Business endpoints not yet exposed.
+
+---
+
+## 🔔 Notification Service (Gateway: `/api/notifications`)
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| GET | `http://72.61.102.216:8888/api/notifications/` | Health check | None |
+
+> ⚠️ **Note:** Notification Service only has a health check endpoint. Business endpoints not yet exposed.
+
+---
+
+## 💳 Payment Service (Gateway: `/api/payment`)
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| GET | `http://72.61.102.216:8888/api/payment/` | Health check | None |
+
+> ⚠️ **Note:** Payment Service only has a health check endpoint. Business endpoints not yet exposed.
+
+---
+
+## 📝 Summary
+
+| Service | Total Endpoints |
+|---------|-----------------|
+| Auth | 9 |
+| Catalog | 16 |
+| Cart | 2 |
+| Ordering | 4 |
+| Delivery | 10 |
+| Audit | 1 |
+| Notification | 1 |
+| Payment | 1 |
+| **Total** | **44** |
