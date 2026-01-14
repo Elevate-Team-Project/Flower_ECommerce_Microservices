@@ -1,4 +1,5 @@
 ﻿
+using Auth.Behaviors;
 using Auth.Contarcts;
 using Auth.Data;
 using Auth.Data.Seed;
@@ -124,6 +125,11 @@ namespace Auth_Service
             builder.Services.AddScoped<IMailKitEmailService, MailKitEmailService>();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
+            builder.Services.AddValidatorsFromAssemblyContaining<RegisterCommandValidator>();
+            builder.Services.AddTransient(
+            typeof(IPipelineBehavior<,>),
+            typeof(ValidationBehavior<,>)
+            );
 
             // Caching
             builder.Services.AddMemoryCache();

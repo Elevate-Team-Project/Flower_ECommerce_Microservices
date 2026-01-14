@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Auth_Service.Features.Shared;
+using FluentValidation;
 using MediatR;
 
 namespace Auth.Behaviors
@@ -13,31 +14,48 @@ namespace Auth.Behaviors
             _validators = validators;
         }
 
-        public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+        public async Task<TResponse> Handle(
+            TRequest request,
+            RequestHandlerDelegate<TResponse> next,
+            CancellationToken cancellationToken)
         {
-            if (_validators.Any())
-            {
-                var context = new ValidationContext<TRequest>(request);
-                var validationResults = await Task.WhenAll(_validators.Select(v => v.ValidateAsync(context, cancellationToken)));
-                var failures = validationResults.SelectMany(r => r.Errors).Where(f => f != null).ToList();
+            if (!_validators.Any())
+                return await next();
 
-                if (failures.Count != 0)
+            var context = new ValidationContext<TRequest>(request);
+
+            var validationResults = await Task.WhenAll(
+                _validators.Select(v => v.ValidateAsync(context, cancellationToken))
+            );
+
+            var failures = validationResults
+                .SelectMany(r => r.Errors)
+                .Where(f => f != null)
+                .ToList();
+
+            if (!failures.Any())
+                return await next();
+
+            var message = string.Join("\n",
+                failures.Select(f =>
                 {
-                    var cleanErrors = failures
-                        .Select(f => new
-                        {
-                            Field = f.PropertyName.Replace("RegisterDto.", ""),
-                            f.ErrorMessage
-                        });
+                    var field = f.PropertyName.Replace("RegisterDto.", "");
+                    return $"{field}: {f.ErrorMessage}";
+                })
+             );
 
-                    throw new FluentValidation.ValidationException(cleanErrors
-                        .Select(e => new FluentValidation.Results.ValidationFailure(e.Field, e.ErrorMessage)));
-                }
+            var responseType = typeof(TResponse);
 
+            if (responseType.IsGenericType &&
+                responseType.GetGenericTypeDefinition().Name.StartsWith("RequestResponse"))
+            {
+                var failMethod = responseType.GetMethod("Fail");
+                var failResult = failMethod!.Invoke(null, new object[] { message });
 
+                return (TResponse)failResult!;
             }
-            return await next();
 
+            throw new ValidationException(failures);
         }
     }
 }
