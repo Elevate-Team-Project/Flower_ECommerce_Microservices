@@ -178,7 +178,10 @@ namespace Cart_Service.Features.Cart.Checkout
                 DiscountAmount: discountAmount,
                 TotalAmount: totalAmount,
                 Status: "Pending",
-                EstimatedDelivery: DateTime.UtcNow.AddDays(3)
+                EstimatedDelivery: DateTime.UtcNow.AddDays(3),
+                IsGift: request.IsGift,
+                RecipientName: request.RecipientName,
+                GiftMessage: request.GiftMessage
             );
 
             return EndpointResponse<CheckoutResultDto>.SuccessResponse(

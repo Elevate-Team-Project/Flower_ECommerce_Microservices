@@ -133,6 +133,9 @@ namespace Catalog_Service
                 {
                     // Add Consumers here
                     x.AddConsumer<Catalog_Service.Features.ProductsFeature.StockManagement.OrderDeliveredConsumer>();
+                    x.AddConsumer<Catalog_Service.Features.ProductsFeature.StockManagement.PaymentFailedConsumer>();
+                    x.AddConsumer<Catalog_Service.Features.ProductsFeature.StockManagement.OrderCancelledConsumer>();
+                    x.AddConsumer<Catalog_Service.Features.ProductsFeature.OfferExpiredConsumer>();
 
                     // CRITICAL: Configure Transactional Outbox
                     x.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>

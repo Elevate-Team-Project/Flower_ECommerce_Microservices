@@ -30,7 +30,11 @@ namespace Cart_Service.Features.Cart.Checkout
         decimal DiscountAmount,
         decimal TotalAmount,
         string Status,
-        DateTime EstimatedDelivery
+        DateTime EstimatedDelivery,
+        // Gift order info (US-D05)
+        bool IsGift = false,
+        string? RecipientName = null,
+        string? GiftMessage = null
     );
 
     public record CartItemForCheckout(

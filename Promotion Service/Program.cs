@@ -92,6 +92,9 @@ namespace Promotion_Service
                 });
             });
 
+            // Background Services
+            builder.Services.AddHostedService<Promotion_Service.Services.OfferExpirationService>();
+
             // Authentication
             builder.Services.AddAuthentication(options =>
             {
