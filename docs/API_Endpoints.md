@@ -74,8 +74,27 @@
 | GET | `http://72.61.102.216:8888/api/orders/api/orders/{orderId}` | Get order details | Path: `orderId` (int) |
 | GET | `http://72.61.102.216:8888/api/orders/api/orders/user/{userId}` | Get orders by user ID | Path: `userId` (string) |
 | PUT | `http://72.61.102.216:8888/api/orders/api/orders/{orderId}/status` | Update order status | Path: `orderId` (int) + JSON body |
+| GET | `http://72.61.102.216:8888/api/orders/api/v1/orders/my` | Get current user's orders | Query: `status` (optional: active/completed/cancelled) |
+| POST | `http://72.61.102.216:8888/api/orders/api/orders/reorder` | Reorder a delivered order | JSON body: `ReOrderRequest` |
+| GET | `http://72.61.102.216:8888/api/orders/api/orders/{orderId}/reorder-preview` | Preview order for reorder | Path: `orderId` (int) |
+
+### ReOrder Request Body
+
+```json
+{
+  "originalOrderId": 123,
+  "items": [
+    { "productId": 1, "quantity": 2 },
+    { "productId": 2, "quantity": 0 }  // Set to 0 to remove item
+  ],
+  "deliveryAddressId": 5,              // Optional: use saved address
+  "shippingAddress": "...",            // Optional: manual address
+  "notes": "Please deliver quickly"    // Optional
+}
+```
 
 ---
+
 
 ## 🚚 Delivery Service (Gateway: `/api/delivery`)
 
@@ -138,9 +157,10 @@
 | Auth | 9 |
 | Catalog | 16 |
 | Cart | 2 |
-| Ordering | 4 |
+| Ordering | 7 |
 | Delivery | 10 |
 | Audit | 1 |
 | Notification | 1 |
 | Payment | 1 |
-| **Total** | **44** |
+| **Total** | **47** |
+

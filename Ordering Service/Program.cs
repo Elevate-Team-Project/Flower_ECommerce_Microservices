@@ -12,6 +12,8 @@ using Ordering_Service.Features.Orders.CreateOrder;
 using Ordering_Service.Features.Orders.GetOrderDetails;
 using Ordering_Service.Features.Orders.GetUserOrders;
 using Ordering_Service.Features.Orders.UpdateOrderStatus;
+using Ordering_Service.Features.Orders.ReOrder;
+using Ordering_Service.Features.Orders.ViewMyOrders;
 using Ordering_Service.GrpcServices;
 using Ordering_Service.Infrastructure;
 using Ordering_Service.Infrastructure.Data;
@@ -119,6 +121,8 @@ namespace Ordering_Service
             app.MapGetOrderDetailsEndpoints();
             app.MapUpdateOrderStatusEndpoints();
             app.MapGetOrdersStatusEndpoints();
+            app.MapReOrderEndpoints();
+            app.MapViewMyOrdersEndpoints();
 
             // Note: Shipment endpoints have been moved to Delivery Service
 
