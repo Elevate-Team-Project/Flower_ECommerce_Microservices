@@ -17,6 +17,10 @@ namespace Ordering_Service.Infrastructure.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<DiscountUsage> DiscountUsages { get; set; }
+        
+        // Cart Service Merge
+        public DbSet<Cart> Carts { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
 
         //public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; }
 
@@ -77,6 +81,24 @@ namespace Ordering_Service.Infrastructure.Data
             modelBuilder.Entity<DiscountUsage>()
                 .Property(d => d.DiscountValue)
                 .HasColumnType("decimal(18,2)");
+                
+            // =========================================================
+            // MERGED CART CONFIGURATION
+            // =========================================================
+            // 1. Configure Cart Relationship (One-to-Many)
+            modelBuilder.Entity<Cart>()
+                .HasMany(c => c.Items)
+                .WithOne(i => i.Cart)
+                .HasForeignKey(i => i.CartId)
+                .OnDelete(DeleteBehavior.Cascade); // Important: Deleting a Cart deletes its items
+
+            // 2. Configure Decimal Precision for Money
+            modelBuilder.Entity<CartItem>()
+                .Property(i => i.UnitPrice)
+                .HasColumnType("decimal(18,2)");
+                
+            modelBuilder.Entity<Cart>().HasQueryFilter(e => !e.IsDeleted);
+            modelBuilder.Entity<CartItem>().HasQueryFilter(e => !e.IsDeleted);
 
             // =========================================================
             // 🗑️ Global Query Filter (Soft Delete)

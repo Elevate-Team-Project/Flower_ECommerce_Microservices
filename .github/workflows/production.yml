@@ -11,12 +11,6 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      # Matrix strategy to build multiple services in parallel
-      matrix:
-        service:
           - name: auth
             dockerfile: "Auth Service/Dockerfile"
             context: .
@@ -25,10 +19,6 @@ jobs:
             dockerfile: "Catalog Service/Dockerfile"
             context: .
             tag_name: "catalog"
-          - name: cart
-            dockerfile: "Cart Service/Dockerfile"
-            context: .
-            tag_name: "cart"
           - name: ordering
             dockerfile: "Ordering Service/Dockerfile"
             context: .
@@ -41,10 +31,6 @@ jobs:
             dockerfile: "Notification Service/Dockerfile"
             context: .
             tag_name: "notification"
-          - name: audit
-            dockerfile: "Audit Service/Dockerfile"
-            context: .
-            tag_name: "audit"
           - name: gateway
             dockerfile: "API Gateway/Dockerfile"
             context: .
@@ -53,13 +39,6 @@ jobs:
             dockerfile: "Delivery Service/Dockerfile"
             context: .
             tag_name: "delivery"
-          # ====================================================
-          # ✅ NEWLY ADDED: Promotion Service
-          # ====================================================
-          - name: promotion
-            dockerfile: "Promotion Service/Dockerfile"
-            context: .
-            tag_name: "promotion"
 
     steps:
       - name: Checkout code

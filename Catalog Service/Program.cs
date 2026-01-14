@@ -24,8 +24,32 @@ using System.Text;
 using Catalog_Service.Features.CategoriesFeature.CreateCategory;
 using Catalog_Service.Infrastructure.UnitOfWork;
 using Catalog_Service.Features.OccasionsFeature.UpdateOccasion;
+using Catalog_Service.Features.OffersFeature.CreateOffer;
+using Catalog_Service.Features.OffersFeature.UpdateOffer;
+using Catalog_Service.Features.OffersFeature.DeleteOffer;
+using Catalog_Service.Features.OffersFeature.GetAllOffers;
+using Catalog_Service.Features.OffersFeature.GetActiveOffers;
+using Catalog_Service.Features.OffersFeature.GetOfferById;
+using Catalog_Service.Features.CouponsFeature.CreateCoupon;
+using Catalog_Service.Features.CouponsFeature.GetAllCoupons;
+using Catalog_Service.Features.CouponsFeature.ValidateCoupon;
+using Catalog_Service.Features.CouponsFeature.ApplyCoupon;
+using Catalog_Service.Features.CouponsFeature.CouponHistory;
+using Catalog_Service.Features.LoyaltyFeature.GetBalance;
+using Catalog_Service.Features.LoyaltyFeature.GetTiers;
+using Catalog_Service.Features.LoyaltyFeature.GetTransactions;
+using Catalog_Service.Features.LoyaltyFeature.RedeemPoints;
+using Catalog_Service.Features.RegistrationCodesFeature.CreateRegistrationCode;
+using Catalog_Service.Features.RegistrationCodesFeature.ValidateRegistrationCode;
+using Catalog_Service.Features.RegistrationCodesFeature.ApplyRegistrationCode;
+using Catalog_Service.Features.BannersFeature.CreateBanner;
+using Catalog_Service.Features.BannersFeature.DeleteBanner;
+using Catalog_Service.Features.BannersFeature.GetActiveBanners;
+using Catalog_Service.Features.BannersFeature.GetAllBanners;
+using Catalog_Service.Features.BannersFeature.UpdateBanner;
 using Catalog_Service.Features.CategoriesFeature.GetActiveCategoryFeature;
 using Catalog_Service.GrpcServices;
+// PromotionGrpcService should be in Catalog_Service.GrpcServices namespace
 namespace Catalog_Service
 {
     public class Program
@@ -136,6 +160,8 @@ namespace Catalog_Service
                     x.AddConsumer<Catalog_Service.Features.ProductsFeature.StockManagement.PaymentFailedConsumer>();
                     x.AddConsumer<Catalog_Service.Features.ProductsFeature.StockManagement.OrderCancelledConsumer>();
                     x.AddConsumer<Catalog_Service.Features.ProductsFeature.OfferExpiredConsumer>();
+                    // Loyalty Consumer
+                    x.AddConsumer<Catalog_Service.Features.LoyaltyFeature.EarnPoints.OrderDeliveredConsumer>();
 
                     // CRITICAL: Configure Transactional Outbox
                     x.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
@@ -280,8 +306,42 @@ namespace Catalog_Service
                 app.UseAuthorization();
                 app.MapAllEndpoints();
                 app.MapGet("/", () => "Catalog Service is running...");
+                // Map Endpoints - Offers
+                app.MapCreateOfferEndpoints();
+                app.MapGetAllOffersEndpoints();
+                app.MapGetOfferByIdEndpoints();
+                app.MapUpdateOfferEndpoints();
+                app.MapDeleteOfferEndpoints();
+                app.MapGetActiveOffersEndpoints();
+
+                // Map Endpoints - Coupons
+                app.MapCreateCouponEndpoints();
+                app.MapGetAllCouponsEndpoints();
+                app.MapValidateCouponEndpoints();
+                app.MapApplyCouponEndpoints();
+                app.MapCouponHistoryEndpoints();
+
+                // Map Endpoints - Loyalty
+                app.MapLoyaltyBalanceEndpoints();
+                app.MapLoyaltyTiersEndpoints();
+                app.MapLoyaltyTransactionsEndpoints();
+                app.MapRedeemPointsEndpoints();
+
+                // Map Endpoints - Registration Codes
+                app.MapCreateRegistrationCodeEndpoints();
+                app.MapValidateRegistrationCodeEndpoints();
+                app.MapApplyRegistrationCodeEndpoints();
+
+                // Map Endpoints - Banners
+                app.MapCreateBannerEndpoints();
+                app.MapDeleteBannerEndpoints();
+                app.MapGetActiveBannersEndpoints();
+                app.MapGetAllBannersEndpoints();
+                app.MapUpdateBannerEndpoints();
+
                 // Map gRPC service
                 app.MapGrpcService<CatalogGrpcService>();
+                app.MapGrpcService<PromotionGrpcService>(); // ✅ NEW
 
                 // Uncomment once you have the Middleware class
                 // app.UseMiddleware<TransactionMiddleware>();

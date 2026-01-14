@@ -1,24 +1,34 @@
 using BuildingBlocks.Grpc;
 using BuildingBlocks.Interfaces;
+using BuildingBlocks.SharedEntities;
 using FluentValidation;
 using Grpc.Net.Client;
 using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Ordering_Service.Entities;
+using Ordering_Service.Features.Cart.AddToCart; // ✅ NEW
+using Ordering_Service.Features.Cart.Checkout;  // ✅ NEW
+using Ordering_Service.Features.Cart.RemoveCartItem; // ✅ NEW
+using Ordering_Service.Features.Cart.RemoveProductQuantityInShoppingCart; // ✅ NEW
+using Ordering_Service.Features.Cart.UpdateCartItem; // ✅ NEW
+using Ordering_Service.Features.Cart.UpdateProductQuantityInShoppingCart; // ✅ NEW
+using Ordering_Service.Features.Cart.ViewShoppingCart; // ✅ NEW
 using Ordering_Service.Features.Orders;
 using Ordering_Service.Features.Orders.ConfirmOrder;
 using Ordering_Service.Features.Orders.CreateOrder;
 using Ordering_Service.Features.Orders.GetOrderDetails;
 using Ordering_Service.Features.Orders.GetUserOrders;
-using Ordering_Service.Features.Orders.UpdateOrderStatus;
 using Ordering_Service.Features.Orders.ReOrder;
+using Ordering_Service.Features.Orders.UpdateOrderStatus;
 using Ordering_Service.Features.Orders.ViewMyOrders;
 using Ordering_Service.GrpcServices;
 using Ordering_Service.Infrastructure;
 using Ordering_Service.Infrastructure.Data;
 using Ordering_Service.Infrastructure.UnitOfWork;
 using Ordering_Service.MiddleWares;
+using Serilog;
+using System.Reflection;
 
 namespace Ordering_Service
 {
@@ -32,13 +42,27 @@ namespace Ordering_Service
             builder.Services.AddDbContext<OrderingDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Repositories & UoW
-            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-            builder.Services.AddScoped<IBaseRepository<Order>, BaseRepository<Order>>();
-            builder.Services.AddScoped<IBaseRepository<OrderItem>, BaseRepository<OrderItem>>();
-            builder.Services.AddScoped<IBaseRepository<DiscountUsage>, BaseRepository<DiscountUsage>>();
+            // Repositories & UoW - single registrations (avoid duplicates)
+            var entityTypes = Assembly.GetExecutingAssembly()
+                   .GetTypes()
+                   .Where(t => t.IsClass && !t.IsAbstract && t.IsSubclassOf(typeof(BaseEntity)))
+                   .ToList();
 
-            // MediatR
+            foreach (var entityType in entityTypes)
+            {
+                var interfaceType = typeof(IBaseRepository<>).MakeGenericType(entityType);
+                var implementationType = typeof(BaseRepository<>).MakeGenericType(entityType);
+
+                builder.Services.AddScoped(interfaceType, implementationType);
+            }
+
+            // Register open-generic once
+            builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            Log.Information("Registered {Count} generic repositories successfully", entityTypes.Count);
+
+            // MediatR - single registration using recommended API
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
             // FluentValidation
@@ -76,6 +100,22 @@ namespace Ordering_Service
             .ConfigureChannel(options =>
             {
                 // For development - accept any certificate
+                if (builder.Environment.IsDevelopment())
+                {
+                    options.HttpHandler = new HttpClientHandler
+                    {
+                        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                    };
+                }
+            });
+
+            // ✅ NEW: gRPC Client for Promotion Service (Merged into Catalog Service, so same URL)
+            builder.Services.AddGrpcClient<PromotionGrpc.PromotionGrpcClient>(options =>
+            {
+                options.Address = new Uri(catalogServiceUrl);
+            })
+            .ConfigureChannel(options =>
+            {
                 if (builder.Environment.IsDevelopment())
                 {
                     options.HttpHandler = new HttpClientHandler
@@ -123,6 +163,16 @@ namespace Ordering_Service
             app.MapGetOrdersStatusEndpoints();
             app.MapReOrderEndpoints();
             app.MapViewMyOrdersEndpoints();
+
+            // ✅ MERGED CART ENDPOINTS
+            app.MapAddToCartEndpoints();
+            app.MapCheckoutEndpoints();
+            app.MapRemoveCartItemEndpoints();
+            app.MapViewCartEndpoints();
+            app.MapDecreaseItemEndpoints();
+            app.MapUpdateItemQuantityEndpoints();
+            app.MapUpdateCartItemEndpoints();
+            // ...
 
             // Note: Shipment endpoints have been moved to Delivery Service
 
