@@ -1,8 +1,25 @@
 version: '3.8'
 
+# ============================================
+# Flower E-Commerce Microservices
+# Local Development Docker Compose
+# ============================================
+# Discovered Services (10 Total):
+# 1. API Gateway         - Port 8888:8080
+# 2. Auth Service        - Port 8082:8080
+# 3. Catalog Service     - Port 8084:8080
+# 4. Cart Service        - Port 8086:8080
+# 5. Ordering Service    - Port 8088:8080
+# 6. Payment Service     - Port 8090:8080
+# 7. Delivery Service    - Port 8092:8080
+# 8. Promotion Service   - Port 8094:8080
+# 9. Notification Service - Port 8096:8080
+# 10. Audit Service      - Port 8098:8080
+# ============================================
+
 services:
   # ==========================================
-  # 1. Infrastructure: SQL Server
+  # INFRASTRUCTURE: SQL Server
   # ==========================================
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -16,23 +33,37 @@ services:
       - sql_data:/var/opt/mssql
     networks:
       - flower_network
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "MyComplexP@ssw0rd2025" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   # ==========================================
-  # 2. Infrastructure: RabbitMQ
+  # INFRASTRUCTURE: RabbitMQ
   # ==========================================
   rabbitmq:
     image: rabbitmq:3-management
     container_name: flower_rabbitmq
     ports:
-      - "5672:5672"   # AMQP
-      - "15672:15672" # Management UI
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - flower_network
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   # ==========================================
-  # 3. Infrastructure: Redis
+  # INFRASTRUCTURE: Redis
   # ==========================================
   redis:
     image: redis:alpine
@@ -43,154 +74,15 @@ services:
       - redis_data:/data
     networks:
       - flower_network
-
-  # (?? ??? MongoDB ?? ???)
-
-  # ==========================================
-  # 5. Service: Catalog Service
-  # ==========================================
-  catalogservice:
-    image: ${DOCKER_REGISTRY-}catalogservice
-    build:
-      context: .
-      dockerfile: "Catalog Service/Dockerfile"
-    ports:
-      - "8082:8080"
-      - "8083:8081"
-    environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=CatalogDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
-      - RabbitMq__Host=rabbitmq
-      - Redis__Url=redis:6379
-    depends_on:
-      - sqlserver
-      - rabbitmq
-      - redis
-    networks:
-      - flower_network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   # ==========================================
-  # 6. Service: Auth (Identity) Service
-  # ==========================================
-  authservice:
-    image: ${DOCKER_REGISTRY-}authservice
-    build:
-      context: .
-      dockerfile: "Auth Service/Dockerfile"
-    ports:
-      - "8090:8080"
-      - "8091:8081"
-    environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=IdentityDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
-      - RabbitMq__Host=rabbitmq
-    depends_on:
-      - sqlserver
-      - rabbitmq
-    networks:
-      - flower_network
-
-  # ==========================================
-  # 7. Service: Cart Service
-  # ==========================================
-  cartservice:
-    image: ${DOCKER_REGISTRY-}cartservice
-    build:
-      context: .
-      dockerfile: "Cart Service/Dockerfile"
-    ports:
-      - "8092:8080"
-      - "8093:8081"
-    environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=CartDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
-      - RabbitMq__Host=rabbitmq
-      - Redis__Url=redis:6379
-    depends_on:
-      - sqlserver
-      - rabbitmq
-      - redis
-    networks:
-      - flower_network
-
-  # ==========================================
-  # 8. Service: Ordering Service
-  # ==========================================
-  orderingservice:
-    image: ${DOCKER_REGISTRY-}orderingservice
-    build:
-      context: .
-      dockerfile: "Ordering Service/Dockerfile"
-    ports:
-      - "8094:8080"
-      - "8095:8081"
-    environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=OrderingDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
-      - RabbitMq__Host=rabbitmq
-    depends_on:
-      - sqlserver
-      - rabbitmq
-    networks:
-      - flower_network
-
-  # ==========================================
-  # 10. Service: Payment Service
-  # ==========================================
-  paymentservice:
-    image: ${DOCKER_REGISTRY-}paymentservice
-    build:
-      context: .
-      dockerfile: "Payment Service/Dockerfile"
-    ports:
-      - "8098:8080"
-      - "8099:8081"
-    environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=PaymentDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
-      - RabbitMq__Host=rabbitmq
-    depends_on:
-      - sqlserver
-      - rabbitmq
-    networks:
-      - flower_network
-
-  # ==========================================
-  # 11. Service: Notification Service
-  # ==========================================
-  notificationservice:
-    image: ${DOCKER_REGISTRY-}notificationservice
-    build:
-      context: .
-      dockerfile: "Notification Service/Dockerfile"
-    ports:
-      - "8100:8080"
-      - "8101:8081"
-    environment:
-      - RabbitMq__Host=rabbitmq
-    depends_on:
-      - rabbitmq
-    networks:
-      - flower_network
-
-  # ==========================================
-  # 12. Service: Audit Service
-  # ==========================================
-  auditservice:
-    image: ${DOCKER_REGISTRY-}auditservice
-    build:
-      context: .
-      dockerfile: "Audit Service/Dockerfile"
-    ports:
-      - "8102:8080"
-      - "8103:8081"
-    environment:
-      # ?? ????? ??????? ????? SQL Server ????? ?? Mongo
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AuditDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
-      - RabbitMq__Host=rabbitmq
-    depends_on:
-      - sqlserver  # ???? ????? ??? SQL
-      - rabbitmq
-    networks:
-      - flower_network
-
-  # ==========================================
-  # 13. API Gateway
+  # SERVICE 1: API Gateway (Main Entry Point)
+  # Host Port: 8888
   # ==========================================
   apigateway:
     image: ${DOCKER_REGISTRY-}apigateway
@@ -202,11 +94,263 @@ services:
       - "8889:8081"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080;http://+:8081
     depends_on:
       - authservice
       - catalogservice
       - cartservice
       - orderingservice
+      - paymentservice
+      - deliveryservice
+      - promotionservice
+    networks:
+      - flower_network
+
+  # ==========================================
+  # SERVICE 2: Auth (Identity) Service
+  # Host Port: 8082
+  # ==========================================
+  authservice:
+    image: ${DOCKER_REGISTRY-}authservice
+    build:
+      context: .
+      dockerfile: "Auth Service/Dockerfile"
+    ports:
+      - "8082:8080"
+      - "8083:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GiftShop_IdentityDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - flower_network
+
+  # ==========================================
+  # SERVICE 3: Catalog Service
+  # Host Port: 8084
+  # ==========================================
+  catalogservice:
+    image: ${DOCKER_REGISTRY-}catalogservice
+    build:
+      context: .
+      dockerfile: "Catalog Service/Dockerfile"
+    ports:
+      - "8084:8080"
+      - "8085:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GiftShop_CatalogDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - Redis__Url=redis:6379
+      - GrpcServices__OrderingServiceUrl=http://orderingservice:8081
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - flower_network
+
+  # ==========================================
+  # SERVICE 4: Cart Service
+  # Host Port: 8086
+  # ==========================================
+  cartservice:
+    image: ${DOCKER_REGISTRY-}cartservice
+    build:
+      context: .
+      dockerfile: "Cart Service/Dockerfile"
+    ports:
+      - "8086:8080"
+      - "8087:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GiftShop_CartDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - Redis__Url=redis:6379
+      - GrpcServices__CatalogServiceUrl=http://catalogservice:8081
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      catalogservice:
+        condition: service_started
+    networks:
+      - flower_network
+
+  # ==========================================
+  # SERVICE 5: Ordering Service
+  # Host Port: 8088
+  # ==========================================
+  orderingservice:
+    image: ${DOCKER_REGISTRY-}orderingservice
+    build:
+      context: .
+      dockerfile: "Ordering Service/Dockerfile"
+    ports:
+      - "8088:8080"
+      - "8089:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GiftShop_OrderingDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - GrpcServices__CatalogServiceUrl=http://catalogservice:8081
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      cartservice:
+        condition: service_started
+      catalogservice:
+        condition: service_started
+    networks:
+      - flower_network
+
+  # ==========================================
+  # SERVICE 6: Payment Service
+  # Host Port: 8090
+  # ==========================================
+  paymentservice:
+    image: ${DOCKER_REGISTRY-}paymentservice
+    build:
+      context: .
+      dockerfile: "Payment Service/Dockerfile"
+    ports:
+      - "8090:8080"
+      - "8091:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GiftShop_PaymentDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - Stripe__SecretKey=sk_test_placeholder
+      - Stripe__PublishableKey=pk_test_placeholder
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      orderingservice:
+        condition: service_started
+    networks:
+      - flower_network
+
+  # ==========================================
+  # SERVICE 7: Delivery Service
+  # Host Port: 8092
+  # ==========================================
+  deliveryservice:
+    image: ${DOCKER_REGISTRY-}deliveryservice
+    build:
+      context: .
+      dockerfile: "Delivery Service/Dockerfile"
+    ports:
+      - "8092:8080"
+      - "8093:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GiftShop_DeliveryDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - GrpcServices__OrderingServiceUrl=http://orderingservice:8081
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      orderingservice:
+        condition: service_started
+    networks:
+      - flower_network
+
+  # ==========================================
+  # SERVICE 8: Promotion Service
+  # Host Port: 8094
+  # ==========================================
+  promotionservice:
+    image: ${DOCKER_REGISTRY-}promotionservice
+    build:
+      context: .
+      dockerfile: "Promotion Service/Dockerfile"
+    ports:
+      - "8094:8080"
+      - "8095:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GiftShop_PromotionDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - Redis__Url=redis:6379
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - flower_network
+
+  # ==========================================
+  # SERVICE 9: Notification Service
+  # Host Port: 8096
+  # ==========================================
+  notificationservice:
+    image: ${DOCKER_REGISTRY-}notificationservice
+    build:
+      context: .
+      dockerfile: "Notification Service/Dockerfile"
+    ports:
+      - "8096:8080"
+      - "8097:8081"
+    environment:
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GiftShop_NotificationDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - flower_network
+
+  # ==========================================
+  # SERVICE 10: Audit Service
+  # Host Port: 8098
+  # ==========================================
+  auditservice:
+    image: ${DOCKER_REGISTRY-}auditservice
+    build:
+      context: .
+      dockerfile: "Audit Service/Dockerfile"
+    ports:
+      - "8098:8080"
+      - "8099:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GiftShop_AuditDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__Username=guest
+      - RabbitMq__Password=guest
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - flower_network
 
@@ -214,6 +358,7 @@ volumes:
   sql_data:
   rabbitmq_data:
   redis_data:
+
 
 networks:
   flower_network:

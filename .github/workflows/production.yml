@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # Matrix strategy to build multiple services in parallel
       matrix:
         service:
           - name: auth
@@ -52,6 +53,13 @@ jobs:
             dockerfile: "Delivery Service/Dockerfile"
             context: .
             tag_name: "delivery"
+          # ====================================================
+          # ✅ NEWLY ADDED: Promotion Service
+          # ====================================================
+          - name: promotion
+            dockerfile: "Promotion Service/Dockerfile"
+            context: .
+            tag_name: "promotion"
 
     steps:
       - name: Checkout code
