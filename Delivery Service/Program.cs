@@ -1,3 +1,4 @@
+using BuildingBlocks.Grpc;
 using BuildingBlocks.Interfaces;
 using FluentValidation;
 using MassTransit;
@@ -61,6 +62,24 @@ namespace Delivery_Service
                 });
             });
 
+            // gRPC Client for Ordering Service
+            var orderingServiceUrl = builder.Configuration["GrpcServices:OrderingServiceUrl"] ?? "https://localhost:5003";
+            builder.Services.AddGrpcClient<OrderingGrpc.OrderingGrpcClient>(options =>
+            {
+                options.Address = new Uri(orderingServiceUrl);
+            })
+            .ConfigureChannel(options =>
+            {
+                // For development - accept any certificate
+                if (builder.Environment.IsDevelopment())
+                {
+                    options.HttpHandler = new HttpClientHandler
+                    {
+                        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                    };
+                }
+            });
+
             builder.Services.AddAuthorization();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c => c.SwaggerDoc("v1", new() { Title = "Delivery Service API", Version = "v1" }));
@@ -82,7 +101,7 @@ namespace Delivery_Service
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseAuthorization();
 
             // Map Address Endpoints
@@ -96,8 +115,10 @@ namespace Delivery_Service
             app.MapCreateShipmentEndpoints();
             app.MapUpdateShipmentStatusEndpoints();
             app.MapGetShipmentDetailsEndpoints();
+            app.MapGet("/", () => "Delivery Service is running...");
 
             await app.RunAsync();
         }
     }
 }
+

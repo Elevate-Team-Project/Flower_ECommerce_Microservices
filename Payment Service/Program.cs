@@ -23,10 +23,10 @@ namespace Payment_Service
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
+            app.MapGet("/", () => "Payment Service is running...");
             app.Run();
         }
     }

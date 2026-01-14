@@ -23,8 +23,8 @@ namespace Notification_Service
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
-
+            //app.UseHttpsRedirection();
+            app.MapGet("/", () => "Notification Service is running...");
             app.UseAuthorization();
 
             app.Run();

@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+option csharp_namespace = "BuildingBlocks.Grpc";
+
+package ordering;
+
+// Ordering Service - provides order information
+service OrderingGrpc {
+    // Get order by ID
+    rpc GetOrderById(GetOrderRequest) returns (OrderResponse);
+    
+    // Get orders by user ID
+    rpc GetUserOrders(GetUserOrdersRequest) returns (OrdersResponse);
+}
+
+message GetOrderRequest {
+    int32 order_id = 1;
+}
+
+message GetUserOrdersRequest {
+    string user_id = 1;
+}
+
+message OrderResponse {
+    bool success = 1;
+    string error_message = 2;
+    OrderDto order = 3;
+}
+
+message OrdersResponse {
+    bool success = 1;
+    string error_message = 2;
+    repeated OrderDto orders = 3;
+}
+
+message OrderDto {
+    int32 id = 1;
+    string user_id = 2;
+    string status = 3;
+    double total_amount = 4;
+    int64 created_at_ticks = 5;
+    repeated OrderItemDto items = 6;
+}
+
+message OrderItemDto {
+    int32 product_id = 1;
+    string product_name = 2;
+    int32 quantity = 3;
+    double unit_price = 4;
+}
