@@ -258,6 +258,8 @@ namespace Cart_Service
                     var carts = await cartRepository.GetAll().ToListAsync();
                     return Results.Ok(carts);
                 });
+                app.MapViewCartEndpoints();
+
                 app.MapUpdateItemQuantityEndpoints();
                 await app.RunAsync();
             }
