@@ -150,6 +150,50 @@
 
 ---
 
+## 🎁 Promotion Service (Gateway: `/api/promotion`)
+
+### Offers (Admin)
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| POST | `/api/promotion/api/offers` | Create an offer (US-G01) | JSON body: `CreateOfferCommand` |
+| GET | `/api/promotion/api/offers` | List all offers (US-G02) | Query: `status`, `sortBy` |
+| GET | `/api/promotion/api/offers/{id}` | Get offer by ID | Path: `id` (int) |
+| PUT | `/api/promotion/api/offers/{id}` | Update offer (US-G03) | Path: `id` (int) + JSON body |
+| DELETE | `/api/promotion/api/offers/{id}` | Delete offer (US-G04) | Path: `id` (int) |
+| GET | `/api/promotion/api/offers/active` | Get active offers (US-G05) | Query: `productId`, `categoryId`, `occasionId` |
+
+### Coupons
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| POST | `/api/promotion/api/coupons` | Create coupon (Admin) | JSON body: `CreateCouponCommand` |
+| GET | `/api/promotion/api/coupons` | List all coupons (Admin) | None |
+| POST | `/api/promotion/api/coupons/validate` | Validate coupon code | JSON body: `ValidateCouponRequest` |
+| POST | `/api/promotion/api/coupons/apply` | Apply coupon to order | JSON body: `ApplyCouponRequest` |
+| GET | `/api/promotion/api/coupons/history` | Get user's coupon history | Bearer Token required |
+
+### Loyalty Points (US-H01 to US-H04)
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| GET | `/api/promotion/api/loyalty/balance` | Get points balance (US-H02) | Bearer Token required |
+| GET | `/api/promotion/api/loyalty/transactions` | Get points history | Bearer Token required |
+| POST | `/api/promotion/api/loyalty/redeem` | Redeem points (US-H03) | JSON body: `RedeemPointsRequest` |
+| GET | `/api/promotion/api/loyalty/tiers` | Get tier info (US-H04) | None |
+
+### Banners
+
+| HTTP Method | Full URL | Description | Required Body/Params |
+|-------------|----------|-------------|---------------------|
+| POST | `/api/promotion/api/banners` | Create banner (Admin) | JSON body: `CreateBannerCommand` |
+| GET | `/api/promotion/api/banners` | List all banners (Admin) | None |
+| GET | `/api/promotion/api/banners/active` | Get active banners | Query: `position` |
+| PUT | `/api/promotion/api/banners/{id}` | Update banner | Path: `id` (int) + JSON body |
+| DELETE | `/api/promotion/api/banners/{id}` | Delete banner | Path: `id` (int) |
+
+---
+
 ## 📝 Summary
 
 | Service | Total Endpoints |
@@ -159,8 +203,10 @@
 | Cart | 2 |
 | Ordering | 7 |
 | Delivery | 10 |
+| Promotion | 21 |
 | Audit | 1 |
 | Notification | 1 |
 | Payment | 1 |
-| **Total** | **47** |
+| **Total** | **68** |
+
 
