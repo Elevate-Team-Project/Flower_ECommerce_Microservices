@@ -11,6 +11,12 @@ env:
 
 jobs:
   build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      # Matrix strategy to build multiple services in parallel
+      matrix:
+        service:
           - name: auth
             dockerfile: "Auth Service/Dockerfile"
             context: .
