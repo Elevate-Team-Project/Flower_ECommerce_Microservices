@@ -19,7 +19,7 @@ namespace Catalog_Service.Features.ProductsFeature.GetBestSellers
             GetBestSellersQuery request,
             CancellationToken cancellationToken)
         {
-            // Get best sellers using projection
+           
             var bestSellers = await _productRepo
                 .Get(p => !p.IsDeleted && p.IsAvailable && p.StockQuantity > 0)
                 .OrderByDescending(p => p.Reviews.Where(r => !r.IsDeleted).Any() 
