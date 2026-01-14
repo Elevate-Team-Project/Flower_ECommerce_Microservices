@@ -13,6 +13,11 @@ namespace Catalog_Service.Entities
         public int StockQuantity { get; set; }
         public bool IsAvailable { get; set; }
 
+
+
+        public decimal AverageRating { get; set; } = 0;
+        public int TotalReviews { get; set; } = 0;
+
         // Foreign Keys
         [ForeignKey(nameof(Brand))]
         public int? BrandId { get; set; }

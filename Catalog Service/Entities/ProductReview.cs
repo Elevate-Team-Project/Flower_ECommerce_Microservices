@@ -11,7 +11,7 @@ namespace Catalog_Service.Entities
         public string UserName { get; set; } // Cached name to avoid calling Identity Service
         public int Rating { get; set; }
         public string Comment { get; set; }
-
+        public DateTime ReviewedAt { get; set; }
         // Navigation properties
         public virtual Product Product { get; set; }
     }

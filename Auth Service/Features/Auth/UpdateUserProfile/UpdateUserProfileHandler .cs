@@ -2,10 +2,12 @@
 using Microsoft.AspNetCore.Identity;
 using Auth.Contarcts;
 using Auth.Models;
+using Auth_Service.Features.Shared;
 
 namespace Auth.Features.Auth.UpdateUserProfile
 {
-    public class UpdateUserProfileHandler : IRequestHandler<UpdateUserProfileCommand, UpdateUserProfileResponse>
+    public class UpdateUserProfileHandler
+        : IRequestHandler<UpdateUserProfileCommand, RequestResponse<UpdateUserProfileResponse>>
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ITokenService _tokenService;
@@ -16,13 +18,13 @@ namespace Auth.Features.Auth.UpdateUserProfile
             _tokenService = tokenService;
         }
 
-        public async Task<UpdateUserProfileResponse> Handle(UpdateUserProfileCommand request, CancellationToken cancellationToken)
+        public async Task<RequestResponse<UpdateUserProfileResponse>> Handle(UpdateUserProfileCommand request, CancellationToken cancellationToken)
         {
             var user = await _userManager.FindByIdAsync(request.UserId.ToString());
-            if (user == null)
-                throw new KeyNotFoundException("User not found.");
 
-            // ✅ Update user fields if provided
+            if (user == null)
+                return RequestResponse<UpdateUserProfileResponse>.Fail("User not found.");
+
             if (!string.IsNullOrWhiteSpace(request.FirstName))
                 user.FirstName = request.FirstName;
 
@@ -37,19 +39,18 @@ namespace Auth.Features.Auth.UpdateUserProfile
 
             user.FullName = $"{user.FirstName} {user.LastName}";
 
-            var updateResult = await _userManager.UpdateAsync(user);
-            if (!updateResult.Succeeded)
+            var result = await _userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
             {
-                var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
-                throw new InvalidOperationException($"Failed to update profile: {errors}");
+                var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                return RequestResponse<UpdateUserProfileResponse>.Fail($"Failed to update profile: {errors}");
             }
 
-            // ✅ Generate new tokens after profile update
-            // ✅ Generate new tokens after profile update
             var roles = await _userManager.GetRolesAsync(user);
-            var tokens = await _tokenService.GenerateTokensAsync(user, false); // false = no rememberMe
+            var tokens = await _tokenService.GenerateTokensAsync(user, false);
 
-            return new UpdateUserProfileResponse
+            var response = new UpdateUserProfileResponse
             {
                 Success = true,
                 Message = "Profile updated successfully",
@@ -65,6 +66,11 @@ namespace Auth.Features.Auth.UpdateUserProfile
                 Token = tokens.AccessToken,
                 RefreshToken = tokens.RefreshToken
             };
+
+            return RequestResponse<UpdateUserProfileResponse>.Success(
+                response,
+                "Profile updated successfully"
+            );
         }
     }
 }

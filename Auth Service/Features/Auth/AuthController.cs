@@ -32,9 +32,10 @@ namespace Auth.Features.Auth
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
             var command = new RegisterCommand(dto);
+
             var result = await _mediator.Send(command);
 
-            if (!result.Success)
+            if (!result.IsSuccess)
                 return BadRequest(result);
 
             return Ok(result);
@@ -45,27 +46,48 @@ namespace Auth.Features.Auth
         public async Task<IActionResult> Login([FromBody] LoginCommand command)
         {
             var result = await _mediator.Send(command);
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
             return Ok(result);
         }
+
+
+
 
         [HttpGet("user-info")]
         [Authorize]
         public async Task<IActionResult> GetCurrentUser()
         {
             var userId = User.FindFirst("id")?.Value;
+
             if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { statusCode = 401, message = "Invalid token or not authenticated." });
+                return Unauthorized(new
+                {
+                    statusCode = 401,
+                    message = "Invalid token or not authenticated."
+                });
 
             var result = await _mediator.Send(new GetCurrentUserQuery(userId));
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
             return Ok(result);
         }
+
 
         [HttpPost("change-password")]
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordCommand command)
         {
             var result = await _mediator.Send(command);
-            return Ok(new { success = result, message = "Password changed successfully." });
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
+            return Ok(result);
         }
 
         [HttpPut("update-profile")]
@@ -73,6 +95,7 @@ namespace Auth.Features.Auth
         public async Task<IActionResult> UpdateProfile([FromForm] UpdateUserProfileRequest request)
         {
             var userId = User.FindFirst("id")?.Value;
+
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { statusCode = 401, message = "Invalid token or not authenticated." });
 
@@ -81,15 +104,24 @@ namespace Auth.Features.Auth
                 request
             );
 
+            if (!response.IsSuccess)
+                return BadRequest(response);
+
             return Ok(response);
         }
+
 
         [HttpPost("forget-password")]
         public async Task<IActionResult> ForgetPassword([FromBody] SendOtpCommand command)
         {
             var result = await _mediator.Send(command);
-            return Ok(new { success = result, message = "OTP sent successfully to your email." });
+
+            if (!result.IsSuccess)
+                return BadRequest(result);
+
+            return Ok(result);
         }
+
 
         [HttpPost("verify-otp")]
         public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpCommand command)
