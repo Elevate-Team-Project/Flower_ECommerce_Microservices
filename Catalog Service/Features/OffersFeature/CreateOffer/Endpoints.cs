@@ -16,7 +16,7 @@ namespace Catalog_Service.Features.OffersFeature.CreateOffer
                     ? Results.Created($"/api/offers/{result.Data?.Id}", result)
                     : Results.BadRequest(result);
             })
-            .WithName("CreateOffer")
+            .WithName("CreateCatalogOffer")
             .WithTags("Offers")
             .WithSummary("Create a new offer (US-G01)")
             .WithDescription("Creates a promotional offer that can apply to a product, category, or occasion.")
