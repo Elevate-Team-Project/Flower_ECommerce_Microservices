@@ -17,8 +17,8 @@ namespace Delivery_Service.Features.Addresses.CreateAddress
             .WithName("CreateAddress")
             .WithTags("Addresses")
             .Produces<AddressDto>(StatusCodes.Status201Created)
-            .Produces(StatusCodes.Status400BadRequest)
-            .RequireAuthorization();
+            .Produces(StatusCodes.Status400BadRequest);
+            
         }
     }
 }

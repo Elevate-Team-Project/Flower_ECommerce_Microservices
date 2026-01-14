@@ -12,6 +12,7 @@ namespace Delivery_Service.Infrastructure.Data
         public DbSet<UserAddress> UserAddresses { get; set; }
         public DbSet<Shipment> Shipments { get; set; }
         public DbSet<DeliveryZone> DeliveryZones { get; set; }
+        public DbSet<DeliveryAddress>deliveryAddress { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

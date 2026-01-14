@@ -27,23 +27,23 @@ namespace Delivery_Service.Features.Addresses.CreateAddress
 
     public record AddressDto(
         int Id,
-        string AddressLabel,
-        string FullName,
-        string Phone,
+        string? AddressLabel,
+        string? FullName,
+        string? Phone,
         // Map Location
         double? Latitude,
         double? Longitude,
         // Address Details
-        string Governorate,
-        string City,
-        string Street,
+        string? Governorate,
+        string? City,
+        string ?Street,
         string? Building,
         string? Floor,
         string? Apartment,
         string? PostalCode,
         string Country,
-        bool IsDefault,
+        bool ?IsDefault,
         string? Landmark,
-        string FullAddress
+        string? FullAddress
     );
 }

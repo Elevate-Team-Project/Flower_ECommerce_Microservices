@@ -4,6 +4,7 @@ using Delivery_Service.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Delivery_Service.Migrations
 {
     [DbContext(typeof(DeliveryDbContext))]
-    partial class DeliveryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251223191613_Delivaryaddress1")]
+    partial class Delivaryaddress1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -84,8 +87,8 @@ namespace Delivery_Service.Migrations
                     b.Property<int?>("phone")
                         .HasColumnType("int");
 
-                    b.Property<string>("postalCode")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("postalCode")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

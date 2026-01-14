@@ -1,4 +1,4 @@
-using BuildingBlocks.SharedEntities;
+ using BuildingBlocks.SharedEntities;
 
 namespace Delivery_Service.Entities
 {

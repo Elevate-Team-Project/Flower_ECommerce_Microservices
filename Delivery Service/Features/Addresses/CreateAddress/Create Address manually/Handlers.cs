@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Delivery_Service.Entities;
 using Delivery_Service.Features.Shared;
+using Delivery_Service.Infrastructure.Services;
 
 namespace Delivery_Service.Features.Addresses.CreateAddress
 {
@@ -10,11 +11,16 @@ namespace Delivery_Service.Features.Addresses.CreateAddress
     {
         private readonly IBaseRepository<UserAddress> _addressRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IGeocodingService _geocoding;
 
-        public CreateAddressHandler(IBaseRepository<UserAddress> addressRepository, IUnitOfWork unitOfWork)
+        public CreateAddressHandler(
+            IBaseRepository<UserAddress> addressRepository,
+            IUnitOfWork unitOfWork,
+            IGeocodingService geocoding)
         {
             _addressRepository = addressRepository;
             _unitOfWork = unitOfWork;
+            _geocoding = geocoding;
         }
 
         public async Task<EndpointResponse<AddressDto>> Handle(CreateAddressCommand request, CancellationToken cancellationToken)
@@ -33,6 +39,23 @@ namespace Delivery_Service.Features.Addresses.CreateAddress
                 }
             }
 
+            double? latitude = request.Latitude;
+            double? longitude = request.Longitude;
+
+            // If lat/long not provided, geocode from address text (normalized & cached inside service)
+            if (!latitude.HasValue || !longitude.HasValue)
+            {
+                var fullTextAddress =
+                    $"{request.Street}, {request.City}, {request.Governorate}, {request.Country}";
+
+              //  var geo = await _geocoding.ForwardGeocodeAsync(fullTextAddress, cancellationToken);
+               
+                
+                    latitude = request.Latitude;
+                    longitude = request.Longitude;
+                
+            }
+
             var address = new UserAddress
             {
                 UserId = request.UserId,
@@ -40,8 +63,8 @@ namespace Delivery_Service.Features.Addresses.CreateAddress
                 FullName = request.FullName,
                 Phone = request.Phone,
                 // Map Location
-                Latitude = request.Latitude,
-                Longitude = request.Longitude,
+                Latitude = latitude,
+                Longitude = longitude,
                 // Address Details
                 Governorate = request.Governorate,
                 City = request.City,
