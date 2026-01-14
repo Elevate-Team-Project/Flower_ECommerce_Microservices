@@ -1,6 +1,6 @@
 using BuildingBlocks.Interfaces;
 using BuildingBlocks.SharedEntities; // Ensure this contains BaseEntity if needed
-using Cart_Service.Features.Cart.ViewShoppingCart;
+using Cart_Service.Features.Cart.UpdateProductQuantityInShoppingCart;
 using Cart_Service.Infrastructure;
 using Cart_Service.Infrastructure.Data; // Update to match your actual namespace
 using MassTransit;
@@ -242,7 +242,7 @@ namespace Cart_Service
                     app.UseSwaggerUI();
                 }
 
-                app.UseHttpsRedirection();
+                ////app.UseHttpsRedirection();
 
                 app.UseCors("AllowAll");
 
@@ -260,6 +260,7 @@ namespace Cart_Service
                 });
                 app.MapViewCartEndpoints();
 
+                app.MapUpdateItemQuantityEndpoints();
                 await app.RunAsync();
             }
             catch (Exception ex)

@@ -1,7 +1,5 @@
-﻿using MediatR;
+﻿using Auth_Service.Features.Shared;
+using MediatR;
 
-namespace Auth.Features.Auth.ForgetPassword.ResetPassword
-{
-    public record ResetPasswordCommand(string Email, string NewPassword) : IRequest<bool>;
-
-}
+public record ResetPasswordCommand(string Email, string NewPassword)
+    : IRequest<RequestResponse<string>>;

@@ -262,13 +262,22 @@ namespace Ordering_Service.Migrations
                     b.Property<DateTime?>("DeliveredAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("DeliveryAddressId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("GiftMessage")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsGift")
                         .HasColumnType("bit");
 
                     b.Property<string>("Notes")
@@ -282,6 +291,12 @@ namespace Ordering_Service.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PaymentTransactionId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RecipientName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RecipientPhone")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ShippedAt")
@@ -365,63 +380,6 @@ namespace Ordering_Service.Migrations
                     b.ToTable("OrderItems");
                 });
 
-            modelBuilder.Entity("Ordering_Service.Entities.Shipment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime?>("ActualDeliveryDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Carrier")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CurrentLocation")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("EstimatedDeliveryDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TrackingNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("Shipments");
-                });
-
             modelBuilder.Entity("Ordering_Service.Entities.DiscountUsage", b =>
                 {
                     b.HasOne("Ordering_Service.Entities.Order", "Order")
@@ -444,24 +402,11 @@ namespace Ordering_Service.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("Ordering_Service.Entities.Shipment", b =>
-                {
-                    b.HasOne("Ordering_Service.Entities.Order", "Order")
-                        .WithMany("Shipments")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-                });
-
             modelBuilder.Entity("Ordering_Service.Entities.Order", b =>
                 {
                     b.Navigation("DiscountUsage");
 
                     b.Navigation("Items");
-
-                    b.Navigation("Shipments");
                 });
 #pragma warning restore 612, 618
         }

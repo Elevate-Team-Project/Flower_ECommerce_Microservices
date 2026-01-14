@@ -1,0 +1,440 @@
+version: '3.9'
+
+# ============================================
+# Flower E-Commerce Production Docker Swarm Compose
+# Team: Elites
+# Deploy: docker stack deploy -c docker-compose.production.yml flower-elites
+# ============================================
+#
+# Image tags use static names (update manually when deploying new versions)
+#
+# Required Environment Variables (no defaults):
+# JWT_SECRET_KEY=your_jwt_secret
+# SMTP_HOST=smtp.gmail.com
+# SMTP_USERNAME=your_email
+# SMTP_PASSWORD=your_smtp_password
+# STRIPE_SECRET_KEY=your_stripe_key
+# STRIPE_PUBLISHABLE_KEY=your_stripe_key
+#
+# Optional Environment Variables (have defaults in compose file):
+# GATEWAY_PORT=8080 AUTH_PORT=8081 CATALOG_PORT=8082 CART_PORT=8083
+# ORDERING_PORT=8084 PAYMENT_PORT=8085 NOTIFICATION_PORT=8086 AUDIT_PORT=8087 DELIVERY_PORT=8088
+# SQL_PASSWORD (default: g19HBzycmCfePY6MREFm)
+# REDIS_PASSWORD (default: g19HBzycmCfePY6MREFm)
+# RABBITMQ_PASSWORD (default: g19HBzycmCfePY6MREFm)
+#
+# Multi-team deployment: Use different stack names and port ranges
+# Services are automatically prefixed with stack name. Internal communication uses simple service names.
+# ============================================
+
+networks:
+  flower_overlay_network:
+    external: true
+
+volumes:
+  flower_uploads:
+    driver: local
+
+services:
+  # ============================================
+  # API GATEWAY (Main Entry Point)
+  # ============================================
+  gateway:
+    user: root
+    image: giftshop90/elites:gateway-${IMAGE_TAG:-latest}
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+      restart_policy:
+        condition: any
+        delay: 60s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.2
+    stop_grace_period: 30s
+    networks:
+      - flower_overlay_network
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    volumes:
+      - flower_uploads:/app/Uploads
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - TZ=Africa/Cairo
+      - DOTNET_RUNNING_IN_CONTAINER=true
+    depends_on:
+      - authservice
+      - catalogservice
+      - cartservice
+
+  # ============================================
+  # AUTH (IDENTITY) SERVICE
+  # ============================================
+  authservice:
+    user: root
+    image: giftshop90/elites:auth-${IMAGE_TAG:-latest}
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+      restart_policy:
+        condition: any
+        delay: 60s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.2
+    stop_grace_period: 30s
+    networks:
+      - flower_overlay_network
+    ports:
+      - "${AUTH_PORT:-8081}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - TZ=Africa/Cairo
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ConnectionStrings__DefaultConnection=${SQL_CONNECTION_STRING:-Server=72.61.102.216,1433;Database=FlowerIdentityDb;User Id=sa;Password=g19HBzycmCfePY6MREFm;TrustServerCertificate=True}
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-FlowerElitesSecretKey2025Production}
+      - JwtSettings__Issuer=${JWT_ISSUER:-flower-elites}
+      - JwtSettings__Audience=${JWT_AUDIENCE:-flower-elites}
+      - RabbitMq__Host=${RABBITMQ_HOST:-72.61.102.216}
+      - RabbitMq__Port=${RABBITMQ_PORT:-5672}
+      - RabbitMq__Username=${RABBITMQ_USERNAME:-admin}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-g19HBzycmCfePY6MREFm}
+
+  # ============================================
+  # CATALOG SERVICE
+  # ============================================
+  catalogservice:
+    user: root
+    image: giftshop90/elites:catalog-${IMAGE_TAG:-latest}
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+      restart_policy:
+        condition: any
+        delay: 60s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.2
+    stop_grace_period: 30s
+    networks:
+      - flower_overlay_network
+    ports:
+      - "${CATALOG_PORT:-8082}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - TZ=Africa/Cairo
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ConnectionStrings__DefaultConnection=${SQL_CONNECTION_STRING:-Server=72.61.102.216,1433;Database=FlowerCatalogDb;User Id=sa;Password=g19HBzycmCfePY6MREFm;TrustServerCertificate=True}
+      - RabbitMq__Host=${RABBITMQ_HOST:-72.61.102.216}
+      - RabbitMq__Port=${RABBITMQ_PORT:-5672}
+      - RabbitMq__Username=${RABBITMQ_USERNAME:-admin}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-g19HBzycmCfePY6MREFm}
+      - Redis__Url=${REDIS_HOST:-72.61.102.216}:${REDIS_PORT:-6379},password=${REDIS_PASSWORD:-g19HBzycmCfePY6MREFm}
+      - GrpcServices__OrderingServiceUrl=http://orderingservice:8081
+
+  # ============================================
+  # CART SERVICE
+  # ============================================
+  cartservice:
+    user: root
+    image: giftshop90/elites:cart-${IMAGE_TAG:-latest}
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+      restart_policy:
+        condition: any
+        delay: 60s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.2
+    stop_grace_period: 30s
+    networks:
+      - flower_overlay_network
+    ports:
+      - "${CART_PORT:-8083}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - TZ=Africa/Cairo
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ConnectionStrings__DefaultConnection=${SQL_CONNECTION_STRING:-Server=72.61.102.216,1433;Database=FlowerCartDb;User Id=sa;Password=g19HBzycmCfePY6MREFm;TrustServerCertificate=True}
+      - RabbitMq__Host=${RABBITMQ_HOST:-72.61.102.216}
+      - RabbitMq__Port=${RABBITMQ_PORT:-5672}
+      - RabbitMq__Username=${RABBITMQ_USERNAME:-admin}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-g19HBzycmCfePY6MREFm}
+      - Redis__Url=${REDIS_HOST:-72.61.102.216}:${REDIS_PORT:-6379},password=${REDIS_PASSWORD:-g19HBzycmCfePY6MREFm}
+    depends_on:
+      - authservice
+      - catalogservice
+
+  # ============================================
+  # ORDERING SERVICE
+  # ============================================
+  orderingservice:
+    user: root
+    image: giftshop90/elites:ordering-${IMAGE_TAG:-latest}
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+      restart_policy:
+        condition: any
+        delay: 60s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.2
+    stop_grace_period: 30s
+    networks:
+      - flower_overlay_network
+    ports:
+      - "${ORDERING_PORT:-8084}:8080"
+      - "${ORDERING_GRPC_PORT:-8184}:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080;http://+:8081
+      - TZ=Africa/Cairo
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ConnectionStrings__DefaultConnection=${SQL_CONNECTION_STRING:-Server=72.61.102.216,1433;Database=FlowerOrderingDb;User Id=sa;Password=g19HBzycmCfePY6MREFm;TrustServerCertificate=True}
+      - RabbitMq__Host=${RABBITMQ_HOST:-72.61.102.216}
+      - RabbitMq__Port=${RABBITMQ_PORT:-5672}
+      - RabbitMq__Username=${RABBITMQ_USERNAME:-admin}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-g19HBzycmCfePY6MREFm}
+      - GrpcServices__CatalogServiceUrl=http://catalogservice:8081
+    depends_on:
+      - cartservice
+      - catalogservice
+
+  # ============================================
+  # PAYMENT SERVICE
+  # ============================================
+  paymentservice:
+    user: root
+    image: giftshop90/elites:payment-${IMAGE_TAG:-latest}
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+      restart_policy:
+        condition: any
+        delay: 60s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.2
+    stop_grace_period: 30s
+    networks:
+      - flower_overlay_network
+    ports:
+      - "${PAYMENT_PORT:-8085}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - TZ=Africa/Cairo
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ConnectionStrings__DefaultConnection=${SQL_CONNECTION_STRING:-Server=72.61.102.216,1433;Database=FlowerPaymentDb;User Id=sa;Password=g19HBzycmCfePY6MREFm;TrustServerCertificate=True}
+      - RabbitMq__Host=${RABBITMQ_HOST:-72.61.102.216}
+      - RabbitMq__Port=${RABBITMQ_PORT:-5672}
+      - RabbitMq__Username=${RABBITMQ_USERNAME:-admin}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-g19HBzycmCfePY6MREFm}
+      - Stripe__SecretKey=${STRIPE_SECRET_KEY}
+      - Stripe__PublishableKey=${STRIPE_PUBLISHABLE_KEY}
+    depends_on:
+      - orderingservice
+
+  # ============================================
+  # NOTIFICATION SERVICE
+  # ============================================
+  notificationservice:
+    user: root
+    image: giftshop90/elites:notification-${IMAGE_TAG:-latest}
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+      restart_policy:
+        condition: any
+        delay: 60s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.2
+    stop_grace_period: 30s
+    networks:
+      - flower_overlay_network
+    ports:
+      - "${NOTIFICATION_PORT:-8086}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - TZ=Africa/Cairo
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - RabbitMq__Host=${RABBITMQ_HOST:-72.61.102.216}
+      - RabbitMq__Port=${RABBITMQ_PORT:-5672}
+      - RabbitMq__Username=${RABBITMQ_USERNAME:-admin}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-g19HBzycmCfePY6MREFm}
+      - Email__Smtp__Host=${SMTP_HOST}
+      - Email__Smtp__Port=${SMTP_PORT:-587}
+      - Email__Smtp__Username=${SMTP_USERNAME}
+      - Email__Smtp__Password=${SMTP_PASSWORD}
+
+  # ============================================
+  # AUDIT SERVICE
+  # ============================================
+  auditservice:
+    user: root
+    image: giftshop90/elites:audit-${IMAGE_TAG:-latest}
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+      restart_policy:
+        condition: any
+        delay: 60s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.2
+    stop_grace_period: 30s
+    networks:
+      - flower_overlay_network
+    ports:
+      - "${AUDIT_PORT:-8087}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - TZ=Africa/Cairo
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ConnectionStrings__MongoDb=${MONGODB_CONNECTION_STRING:-mongodb://72.61.102.216:27017}
+      - RabbitMq__Host=${RABBITMQ_HOST:-72.61.102.216}
+      - RabbitMq__Port=${RABBITMQ_PORT:-5672}
+      - RabbitMq__Username=${RABBITMQ_USERNAME:-admin}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-g19HBzycmCfePY6MREFm}
+
+  # ============================================
+  # DELIVERY SERVICE
+  # ============================================
+  deliveryservice:
+    user: root
+    image: giftshop90/elites:delivery-${IMAGE_TAG:-latest}
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.1'
+      restart_policy:
+        condition: any
+        delay: 60s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 60s
+        max_failure_ratio: 0.2
+    stop_grace_period: 30s
+    networks:
+      - flower_overlay_network
+    ports:
+      - "${DELIVERY_PORT:-8088}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - TZ=Africa/Cairo
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ConnectionStrings__DefaultConnection=${SQL_CONNECTION_STRING:-Server=72.61.102.216,1433;Database=FlowerDeliveryDb;User Id=sa;Password=g19HBzycmCfePY6MREFm;TrustServerCertificate=True}
+      - RabbitMq__Host=${RABBITMQ_HOST:-72.61.102.216}
+      - RabbitMq__Port=${RABBITMQ_PORT:-5672}
+      - RabbitMq__Username=${RABBITMQ_USERNAME:-admin}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD:-g19HBzycmCfePY6MREFm}
+      - GrpcServices__OrderingServiceUrl=http://orderingservice:8081
+    depends_on:
+      - orderingservice

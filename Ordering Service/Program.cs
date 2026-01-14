@@ -1,13 +1,17 @@
+using BuildingBlocks.Grpc;
 using BuildingBlocks.Interfaces;
 using FluentValidation;
+using Grpc.Net.Client;
 using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Ordering_Service.Entities;
+using Ordering_Service.Features.Orders.ConfirmOrder;
 using Ordering_Service.Features.Orders.CreateOrder;
 using Ordering_Service.Features.Orders.GetOrderDetails;
 using Ordering_Service.Features.Orders.GetUserOrders;
 using Ordering_Service.Features.Orders.UpdateOrderStatus;
+using Ordering_Service.GrpcServices;
 using Ordering_Service.Infrastructure;
 using Ordering_Service.Infrastructure.Data;
 using Ordering_Service.Infrastructure.UnitOfWork;
@@ -57,6 +61,27 @@ namespace Ordering_Service
                 });
             });
 
+            // gRPC Server for Ordering Service
+            builder.Services.AddGrpc();
+
+            // gRPC Client for Catalog Service
+            var catalogServiceUrl = builder.Configuration["GrpcServices:CatalogServiceUrl"] ?? "https://localhost:5001";
+            builder.Services.AddGrpcClient<CatalogGrpc.CatalogGrpcClient>(options =>
+            {
+                options.Address = new Uri(catalogServiceUrl);
+            })
+            .ConfigureChannel(options =>
+            {
+                // For development - accept any certificate
+                if (builder.Environment.IsDevelopment())
+                {
+                    options.HttpHandler = new HttpClientHandler
+                    {
+                        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                    };
+                }
+            });
+
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
@@ -70,7 +95,7 @@ namespace Ordering_Service
             if (app.Environment.IsDevelopment())
             {
                 using var scope = app.Services.CreateScope();
-                await DatabaseSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<OrderingDbContext>());
+                //await DatabaseSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<OrderingDbContext>());
             }
 
             app.UseErrorHandling();
@@ -81,17 +106,18 @@ namespace Ordering_Service
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseAuthorization();
+
+            // Map gRPC Service
+            app.MapGrpcService<OrderingGrpcService>();
 
             // Map Order Endpoints
             app.MapCreateOrderEndpoints();
             app.MapGetUserOrdersEndpoints();
             app.MapGetOrderDetailsEndpoints();
             app.MapUpdateOrderStatusEndpoints();
-
-            // Note: Shipment endpoints have been moved to Delivery Service
-
+            app.MapGet("/", () => "Ordering Service is running...");
             await app.RunAsync();
         }
     }
