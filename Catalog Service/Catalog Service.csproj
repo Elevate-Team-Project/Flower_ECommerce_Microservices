@@ -39,10 +39,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.60.0" />
+    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.60.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Protobuf Include="..\BuildingBlocks\Protos\catalog.proto" GrpcServices="Server" Link="Protos\catalog.proto" />
+    <Protobuf Include="..\BuildingBlocks\Protos\ordering.proto" GrpcServices="Client" Link="Protos\ordering.proto" />
   </ItemGroup>
 
   <ItemGroup>

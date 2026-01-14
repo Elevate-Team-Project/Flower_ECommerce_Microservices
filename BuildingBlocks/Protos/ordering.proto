@@ -11,6 +11,21 @@ service OrderingGrpc {
     
     // Get orders by user ID
     rpc GetUserOrders(GetUserOrdersRequest) returns (OrdersResponse);
+    
+    // Check if a product exists in any active (non-delivered, non-cancelled) orders
+    // Used by Catalog Service before deleting a product (US-A11)
+    rpc CheckProductInActiveOrders(CheckProductRequest) returns (CheckProductResponse);
+}
+
+message CheckProductRequest {
+    int32 product_id = 1;
+}
+
+message CheckProductResponse {
+    bool success = 1;
+    bool has_active_orders = 2;
+    int32 active_order_count = 3;
+    string message = 4;
 }
 
 message GetOrderRequest {

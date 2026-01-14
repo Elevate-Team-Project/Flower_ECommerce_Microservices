@@ -197,6 +197,21 @@ namespace Catalog_Service
                 // Add gRPC service
                 builder.Services.AddGrpc();
 
+                // Add gRPC client for Ordering Service (US-A11: Check product in active orders)
+                builder.Services.AddGrpcClient<BuildingBlocks.Grpc.OrderingGrpc.OrderingGrpcClient>(options =>
+                {
+                    var orderingServiceUrl = config["GrpcServices:OrderingService"] ?? "https://localhost:5199";
+                    options.Address = new Uri(orderingServiceUrl);
+                })
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                {
+                    // Allow self-signed certificates in development
+                    var handler = new HttpClientHandler();
+                    handler.ServerCertificateCustomValidationCallback =
+                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+                    return handler;
+                });
+
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen(options =>
                 {

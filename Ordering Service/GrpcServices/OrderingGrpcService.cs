@@ -111,4 +111,51 @@ public class OrderingGrpcService : OrderingGrpc.OrderingGrpcBase
 
         return dto;
     }
+
+    /// <summary>
+    /// Checks if a product exists in any active (non-delivered, non-cancelled) orders.
+    /// Used by Catalog Service before deleting a product (US-A11).
+    /// </summary>
+    public override async Task<CheckProductResponse> CheckProductInActiveOrders(
+        CheckProductRequest request,
+        ServerCallContext context)
+    {
+        try
+        {
+            // Active orders are those that are NOT Delivered or Cancelled
+            var activeStatuses = new[] { "Delivered", "Cancelled" };
+
+            var activeOrderCount = await _orderRepository
+                .GetAll()
+                .Include(o => o.Items)
+                .Where(o => !activeStatuses.Contains(o.Status))
+                .Where(o => o.Items.Any(i => i.ProductId == request.ProductId))
+                .CountAsync(context.CancellationToken);
+
+            _logger.LogInformation(
+                "Product {ProductId} exists in {Count} active orders",
+                request.ProductId, activeOrderCount);
+
+            return new CheckProductResponse
+            {
+                Success = true,
+                HasActiveOrders = activeOrderCount > 0,
+                ActiveOrderCount = activeOrderCount,
+                Message = activeOrderCount > 0
+                    ? $"Product is in {activeOrderCount} active order(s)"
+                    : "Product is not in any active orders"
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking active orders for product {ProductId}", request.ProductId);
+            return new CheckProductResponse
+            {
+                Success = false,
+                HasActiveOrders = false,
+                ActiveOrderCount = 0,
+                Message = $"Error checking orders: {ex.Message}"
+            };
+        }
+    }
 }
