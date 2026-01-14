@@ -1,6 +1,7 @@
 using BuildingBlocks.Interfaces;
 using BuildingBlocks.SharedEntities; // Ensure this contains BaseEntity if needed
 using Cart_Service.Features.Cart.UpdateProductQuantityInShoppingCart;
+using Cart_Service.Features.Cart.ViewShoppingCart;
 using Cart_Service.Infrastructure;
 using Cart_Service.Infrastructure.Data; // Update to match your actual namespace
 using Cart_Service.Infrastructure.UnitOfWork;

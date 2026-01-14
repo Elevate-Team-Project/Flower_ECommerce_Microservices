@@ -13,6 +13,9 @@ using Delivery_Service.Infrastructure;
 using Delivery_Service.Infrastructure.Data;
 using Delivery_Service.Infrastructure.UnitOfWork;
 using Delivery_Service.MiddleWares;
+using Microsoft.EntityFrameworkCore;
+using FluentValidation;
+using MassTransit;
 
 namespace Delivery_Service
 {
