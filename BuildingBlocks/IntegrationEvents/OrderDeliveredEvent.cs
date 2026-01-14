@@ -4,6 +4,12 @@ namespace BuildingBlocks.IntegrationEvents
         int OrderId,
         string UserId,
         decimal OrderTotal,
-        DateTime DeliveredAt
+        DateTime DeliveredAt,
+        List<OrderDeliveredItemDto> Items
+    );
+
+    public record OrderDeliveredItemDto(
+        int ProductId,
+        int Quantity
     );
 }

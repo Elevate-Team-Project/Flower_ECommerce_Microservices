@@ -18,7 +18,8 @@ namespace Cart_Service.Features.Cart.Checkout
         bool IsGift = false,
         string? RecipientName = null,
         string? RecipientPhone = null,
-        string? GiftMessage = null
+        string? GiftMessage = null,
+        int? PointsToRedeem = null
     ) : IRequest<EndpointResponse<CheckoutResultDto>>;
 
     public record CheckoutResultDto(

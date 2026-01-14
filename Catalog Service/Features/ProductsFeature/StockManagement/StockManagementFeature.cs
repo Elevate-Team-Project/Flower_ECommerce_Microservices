@@ -10,6 +10,7 @@ namespace Catalog_Service.Features.ProductsFeature.StockManagement
     // --- Commands ---
 
     public record AddStockCommand(int ProductId, int QuantityToAdd) : IRequest<EndpointResponse<int>>;
+    public record SetStockCommand(int ProductId, int NewQuantity) : IRequest<EndpointResponse<int>>;
     public record UpdateStockSettingsCommand(int ProductId, int MinStock, int MaxStock) : IRequest<EndpointResponse<bool>>;
 
     // --- Validators ---
@@ -20,6 +21,15 @@ namespace Catalog_Service.Features.ProductsFeature.StockManagement
         {
             RuleFor(x => x.ProductId).GreaterThan(0);
             RuleFor(x => x.QuantityToAdd).GreaterThan(0);
+        }
+    }
+
+    public class SetStockValidator : AbstractValidator<SetStockCommand>
+    {
+        public SetStockValidator()
+        {
+            RuleFor(x => x.ProductId).GreaterThan(0);
+            RuleFor(x => x.NewQuantity).GreaterThanOrEqualTo(0);
         }
     }
 
@@ -37,6 +47,7 @@ namespace Catalog_Service.Features.ProductsFeature.StockManagement
 
     public class StockManagementHandler : 
         IRequestHandler<AddStockCommand, EndpointResponse<int>>,
+        IRequestHandler<SetStockCommand, EndpointResponse<int>>,
         IRequestHandler<UpdateStockSettingsCommand, EndpointResponse<bool>>
     {
         private readonly IBaseRepository<Product> _productRepo;
@@ -65,6 +76,27 @@ namespace Catalog_Service.Features.ProductsFeature.StockManagement
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return EndpointResponse<int>.SuccessResponse(product.StockQuantity, "Stock added successfully");
+        }
+
+        public async Task<EndpointResponse<int>> Handle(SetStockCommand request, CancellationToken cancellationToken)
+        {
+            var product = await _productRepo.GetByIdAsync(request.ProductId);
+            if (product == null) return EndpointResponse<int>.ErrorResponse("Product not found", 404);
+
+            if (product.MaxStock > 0 && request.NewQuantity > product.MaxStock)
+            {
+                 return EndpointResponse<int>.ErrorResponse($"Cannot set stock. New quantity exceeds MaxStock of {product.MaxStock}", 400);
+            }
+
+            product.StockQuantity = request.NewQuantity;
+            
+            // Logic: if setting to > 0, ensure Available? 
+            if (product.StockQuantity > 0) product.IsAvailable = true;
+
+            _productRepo.Update(product);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return EndpointResponse<int>.SuccessResponse(product.StockQuantity, "Stock updated successfully");
         }
 
         public async Task<EndpointResponse<bool>> Handle(UpdateStockSettingsCommand request, CancellationToken cancellationToken)
@@ -97,6 +129,14 @@ namespace Catalog_Service.Features.ProductsFeature.StockManagement
                 return Results.Ok(result);
             })
             .WithName("AddProductStock");
+
+            group.MapPost("/set", async (int productId, [FromBody] int quantity, IMediator mediator) =>
+            {
+                var result = await mediator.Send(new SetStockCommand(productId, quantity));
+                if (!result.IsSuccess) return Results.BadRequest(result);
+                return Results.Ok(result);
+            })
+            .WithName("SetProductStock");
 
             group.MapPut("/settings", async (int productId, [FromBody] UpdateStockSettingsCommand command, IMediator mediator) =>
             {

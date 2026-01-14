@@ -139,6 +139,19 @@ namespace Cart_Service
                     return handler;
                 });
 
+                var promotionServiceUrl = config["GrpcServices:Promotion"] ?? "http://localhost:5004"; // Default port for Promotion
+                builder.Services.AddGrpcClient<BuildingBlocks.Grpc.PromotionGrpc.PromotionGrpcClient>(options =>
+                {
+                    options.Address = new Uri(promotionServiceUrl);
+                })
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                {
+                    var handler = new HttpClientHandler();
+                    handler.ServerCertificateCustomValidationCallback = 
+                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+                    return handler;
+                });
+
                 // -------------------------------------------------------------------------------------
                 // MassTransit Configuration (RabbitMQ + Outbox Pattern)
                 // -------------------------------------------------------------------------------------

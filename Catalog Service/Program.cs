@@ -131,8 +131,8 @@ namespace Catalog_Service
                 // -------------------------------------------------------------------------------------
                 builder.Services.AddMassTransit(x =>
                 {
-                    // Add Consumers here when you create them
-                    // x.AddConsumer<ProductCreatedConsumer>();
+                    // Add Consumers here
+                    x.AddConsumer<Catalog_Service.Features.ProductsFeature.StockManagement.OrderDeliveredConsumer>();
 
                     // CRITICAL: Configure Transactional Outbox
                     x.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>

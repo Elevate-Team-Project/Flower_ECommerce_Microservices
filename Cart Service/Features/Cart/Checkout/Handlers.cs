@@ -4,6 +4,7 @@ using Cart_Service.Features.Shared;
 using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using BuildingBlocks.Grpc;
 
 namespace Cart_Service.Features.Cart.Checkout
 {
@@ -13,6 +14,7 @@ namespace Cart_Service.Features.Cart.Checkout
         private readonly IBaseRepository<CartItem> _cartItemRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPublishEndpoint _publishEndpoint;
+        private readonly PromotionGrpc.PromotionGrpcClient _promotionGrpcClient;
         private readonly ILogger<CheckoutHandler> _logger;
 
         private const decimal DELIVERY_FEE = 50m;
@@ -22,12 +24,14 @@ namespace Cart_Service.Features.Cart.Checkout
             IBaseRepository<CartItem> cartItemRepository,
             IUnitOfWork unitOfWork,
             IPublishEndpoint publishEndpoint,
+            PromotionGrpc.PromotionGrpcClient promotionGrpcClient,
             ILogger<CheckoutHandler> logger)
         {
             _cartRepository = cartRepository;
             _cartItemRepository = cartItemRepository;
             _unitOfWork = unitOfWork;
             _publishEndpoint = publishEndpoint;
+            _promotionGrpcClient = promotionGrpcClient;
             _logger = logger;
         }
 
@@ -53,7 +57,68 @@ namespace Cart_Service.Features.Cart.Checkout
 
             // Calculate totals
             var subTotal = cart.Items.Sum(i => i.UnitPrice * i.Quantity);
-            decimal discountAmount = 0; // TODO: Validate coupon via Promotion Service
+            decimal discountAmount = 0; 
+            
+            // 1. Validate Coupon
+            if (!string.IsNullOrEmpty(request.CouponCode))
+            {
+                try
+                {
+                    var couponResponse = await _promotionGrpcClient.ValidateCouponAsync(new ValidateCouponRequest 
+                    { 
+                        CouponCode = request.CouponCode,
+                        UserId = request.UserId,
+                        CartTotal = (double)subTotal
+                    }, cancellationToken: cancellationToken);
+
+                    if (couponResponse.Success)
+                    {
+                        discountAmount += (decimal)couponResponse.DiscountAmount;
+                    }
+                    else
+                    {
+                        // Option: Return error or just ignore invalid coupon? 
+                        // UX wise, better to error if user explicitly tried a coupon.
+                        return EndpointResponse<CheckoutResultDto>.ErrorResponse($"Invalid Coupon: {couponResponse.Message}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to validate coupon via gRPC");
+                    // specific strategy: fail open or closed? Let's fail checkout to be safe.
+                    return EndpointResponse<CheckoutResultDto>.ErrorResponse("Unable to validate coupon currently. Please try again.");
+                }
+            }
+
+            // 2. Validate Loyalty Points
+            decimal loyaltyDiscount = 0;
+            if (request.PointsToRedeem.HasValue && request.PointsToRedeem.Value > 0)
+            {
+                try
+                {
+                    var pointsResponse = await _promotionGrpcClient.RedeemPointsAsync(new RedeemPointsRequest
+                    {
+                        UserId = request.UserId,
+                        PointsToRedeem = request.PointsToRedeem.Value,
+                        CartTotal = (double)(subTotal - discountAmount) // deducting coupon discount first? Or strictly subtotal? Let's use remaining.
+                    }, cancellationToken: cancellationToken);
+
+                    if (pointsResponse.Success)
+                    {
+                        loyaltyDiscount = (decimal)pointsResponse.DiscountAmount;
+                        discountAmount += loyaltyDiscount;
+                    }
+                    else
+                    {
+                        return EndpointResponse<CheckoutResultDto>.ErrorResponse($"Loyalty Redemption Failed: {pointsResponse.Message}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to redeem points via gRPC");
+                    return EndpointResponse<CheckoutResultDto>.ErrorResponse("Unable to process points redemption. Please try again.");
+                }
+            }
 
             var totalAmount = subTotal + DELIVERY_FEE - discountAmount;
 
@@ -81,7 +146,8 @@ namespace Cart_Service.Features.Cart.Checkout
                 IsGift = request.IsGift,
                 RecipientName = request.RecipientName,
                 RecipientPhone = request.RecipientPhone,
-                GiftMessage = request.GiftMessage
+                GiftMessage = request.GiftMessage,
+                PointsRedeemed = request.PointsToRedeem ?? 0
             };
 
             // Publish checkout event for Ordering Service
@@ -138,6 +204,7 @@ namespace Cart_Service.Features.Cart.Checkout
         public string? RecipientName { get; set; }
         public string? RecipientPhone { get; set; }
         public string? GiftMessage { get; set; }
+        public int PointsRedeemed { get; set; }
     }
 
     public class CartCheckoutItem

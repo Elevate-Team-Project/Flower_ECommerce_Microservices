@@ -7,7 +7,38 @@ package promotion;
 // Promotion Service - provides price calculation and offer info
 service PromotionGrpc {
     // Get adjusted prices for a list of products
+    // Get adjusted prices for a list of products
     rpc GetAdjustedPrices(GetAdjustedPricesRequest) returns (GetAdjustedPricesResponse);
+
+    // Validate a coupon for a cart
+    rpc ValidateCoupon(ValidateCouponRequest) returns (ValidateCouponResponse);
+
+    // Check point redemption value and validity
+    rpc RedeemPoints(RedeemPointsRequest) returns (RedeemPointsResponse);
+}
+
+message ValidateCouponRequest {
+    string coupon_code = 1;
+    string user_id = 2;
+    double cart_total = 3;
+}
+
+message ValidateCouponResponse {
+    bool success = 1;
+    double discount_amount = 2;
+    string message = 3;
+}
+
+message RedeemPointsRequest {
+    string user_id = 1;
+    int32 points_to_redeem = 2;
+    double cart_total = 3;
+}
+
+message RedeemPointsResponse {
+    bool success = 1;
+    double discount_amount = 2;
+    string message = 3;
 }
 
 message GetAdjustedPricesRequest {

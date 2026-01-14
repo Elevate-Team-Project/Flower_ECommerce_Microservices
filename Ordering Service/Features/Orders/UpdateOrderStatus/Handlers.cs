@@ -29,6 +29,7 @@ namespace Ordering_Service.Features.Orders.UpdateOrderStatus
             CancellationToken cancellationToken)
         {
             var order = await _orderRepository.GetAll()
+                .Include(o => o.Items)
                 .FirstOrDefaultAsync(o => o.Id == request.OrderId, cancellationToken);
 
             if (order == null)
@@ -54,12 +55,13 @@ namespace Ordering_Service.Features.Orders.UpdateOrderStatus
                 case "Delivered":
                     order.DeliveredAt = DateTime.UtcNow;
                     
-                    // Publish OrderDeliveredEvent for Loyalty Service
+                    // Publish OrderDeliveredEvent for Loyalty Service & Inventory
                     await _publishEndpoint.Publish(new OrderDeliveredEvent(
                         order.Id,
                         order.UserId,
                         order.TotalAmount,
-                        DateTime.UtcNow
+                        DateTime.UtcNow,
+                        order.Items.Select(i => new OrderDeliveredItemDto(i.ProductId, i.Quantity)).ToList()
                     ), cancellationToken);
                     
                     break;

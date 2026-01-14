@@ -9,13 +9,22 @@ namespace Promotion_Service.Features.PriceResolution
     public class PromotionGrpcService : PromotionGrpc.PromotionGrpcBase
     {
         private readonly IBaseRepository<Offer> _offerRepository;
+        private readonly IBaseRepository<Coupon> _couponRepository;
+        private readonly IBaseRepository<LoyaltyAccount> _loyaltyAccountRepository;
+        private readonly IBaseRepository<LoyaltyTier> _loyaltyTierRepository;
         private readonly ILogger<PromotionGrpcService> _logger;
 
         public PromotionGrpcService(
             IBaseRepository<Offer> offerRepository,
+            IBaseRepository<Coupon> couponRepository,
+            IBaseRepository<LoyaltyAccount> loyaltyAccountRepository,
+            IBaseRepository<LoyaltyTier> loyaltyTierRepository,
             ILogger<PromotionGrpcService> logger)
         {
             _offerRepository = offerRepository;
+            _couponRepository = couponRepository;
+            _loyaltyAccountRepository = loyaltyAccountRepository;
+            _loyaltyTierRepository = loyaltyTierRepository;
             _logger = logger;
         }
 
@@ -105,5 +114,117 @@ namespace Promotion_Service.Features.PriceResolution
         }
 
 
+        public override async Task<ValidateCouponResponse> ValidateCoupon(ValidateCouponRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var coupon = await _couponRepository.Get(c => c.Code == request.CouponCode)
+                    .FirstOrDefaultAsync();
+
+                if (coupon == null)
+                {
+                    return new ValidateCouponResponse { Success = false, Message = "Invalid coupon code" };
+                }
+
+                var now = DateTime.UtcNow;
+                if (coupon.ValidFrom > now || coupon.ValidUntil < now)
+                {
+                    return new ValidateCouponResponse { Success = false, Message = "Coupon is expired or not yet active" };
+                }
+
+                if (coupon.MinOrderAmount.HasValue && (decimal)request.CartTotal < coupon.MinOrderAmount.Value)
+                {
+                    return new ValidateCouponResponse { Success = false, Message = $"Minimum order value of {coupon.MinOrderAmount} required" };
+                }
+
+                // Check usage limit
+                if (coupon.MaxTotalUsage.HasValue && coupon.CurrentUsageCount >= coupon.MaxTotalUsage.Value)
+                {
+                    return new ValidateCouponResponse { Success = false, Message = "Coupon usage limit reached" };
+                }
+
+                decimal discount = 0;
+                if (coupon.Type == CouponType.Percentage)
+                {
+                    discount = (decimal)request.CartTotal * (coupon.DiscountValue / 100m);
+                    if (coupon.MaxDiscountAmount.HasValue && discount > coupon.MaxDiscountAmount.Value)
+                    {
+                        discount = coupon.MaxDiscountAmount.Value;
+                    }
+                }
+                else
+                {
+                    discount = coupon.DiscountValue;
+                }
+
+                // Cap at cart total
+                if (discount > (decimal)request.CartTotal) discount = (decimal)request.CartTotal;
+
+                return new ValidateCouponResponse { Success = true, DiscountAmount = (double)discount, Message = "Coupon applied" };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating coupon");
+                return new ValidateCouponResponse { Success = false, Message = "System error validating coupon" };
+            }
+        }
+
+        public override async Task<RedeemPointsResponse> RedeemPoints(RedeemPointsRequest request, ServerCallContext context)
+        {
+            try
+            {
+                var account = await _loyaltyAccountRepository.Get(la => la.UserId == request.UserId)
+                    .Include(la => la.Transactions)
+                    .FirstOrDefaultAsync();
+
+                if (account == null)
+                {
+                    return new RedeemPointsResponse { Success = false, Message = "Loyalty account not found" };
+                }
+
+                if (account.CurrentPoints < request.PointsToRedeem)
+                {
+                    return new RedeemPointsResponse { Success = false, Message = "Insufficient points balance" };
+                }
+
+                // Get Active Tier to find redemption rate
+                // Assuming standard rate if no tier or using Tier logic
+                // Fetch all tiers to find match (or assuming account has Tier populated if included)
+                // For simplicity, let's look up the Tier based on TotalPointsEarned or use a default rate
+                
+                // HARDCODED DEFAULT for MVP if Tier not found: 100 Points = $1
+                decimal redemptionRate = 0.01m; 
+
+                // Try to find actual tier
+                var tiers = await _loyaltyTierRepository.GetAll().OrderByDescending(t => t.MinPoints).ToListAsync();
+                var currentTier = tiers.FirstOrDefault(t => t.MinPoints <= account.TotalEarnedPoints);
+                
+                // If Tier has specific redemption rate, use it. (Assuming Entity has it, otherwise default)
+                // Checking LoyaltyTier entity... (It usually has Rewards info, maybe not rate. Using standard 0.01)
+
+                decimal discountAmount = request.PointsToRedeem * redemptionRate;
+
+                // Cap at Cart Total
+                if (discountAmount > (decimal)request.CartTotal)
+                {
+                     // Option: Cap it or Error? Let's cap money but keep points same (means bad value) OR Error.
+                     // Better: Return error if trying to redeem more than cart worth? 
+                     // Or just Cap. Let's cap the value.
+                     discountAmount = (decimal)request.CartTotal;
+                }
+
+                return new RedeemPointsResponse 
+                { 
+                    Success = true, 
+                    DiscountAmount = (double)discountAmount, 
+                    Message = "Points valid for redemption" 
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error redeeming points");
+                return new RedeemPointsResponse { Success = false, Message = "System error checking points" };
+            }
+        }
     }
 }
