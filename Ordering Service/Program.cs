@@ -14,6 +14,16 @@ using Ordering_Service.Features.Cart.RemoveProductQuantityInShoppingCart; // ✅
 using Ordering_Service.Features.Cart.UpdateCartItem; // ✅ NEW
 using Ordering_Service.Features.Cart.UpdateProductQuantityInShoppingCart; // ✅ NEW
 using Ordering_Service.Features.Cart.ViewShoppingCart; // ✅ NEW
+using Ordering_Service.Features.Delivery.Addresses.CreateAddress;
+using Ordering_Service.Features.Delivery.Addresses.DeleteAddress;
+using Ordering_Service.Features.Delivery.Addresses.GetUserAddresses;
+using Ordering_Service.Features.Delivery.Addresses.SetDefaultAddress;
+using Ordering_Service.Features.Delivery.Addresses.UpdateAddress;
+using Ordering_Service.Features.Delivery.Shipments.CreateShipment;
+using Ordering_Service.Features.Delivery.Shipments.GetDeliveryTracking;
+using Ordering_Service.Features.Delivery.Shipments.GetShipmentDetails;
+using Ordering_Service.Features.Delivery.Shipments.UpdateDriverLocation;
+using Ordering_Service.Features.Delivery.Shipments.UpdateShipmentStatus;
 using Ordering_Service.Features.Orders;
 using Ordering_Service.Features.Orders.ConfirmOrder;
 using Ordering_Service.Features.Orders.CreateOrder;
@@ -174,7 +184,18 @@ namespace Ordering_Service
             app.MapUpdateCartItemEndpoints();
             // ...
 
-            // Note: Shipment endpoints have been moved to Delivery Service
+            // ✅ MERGED DELIVERY ENDPOINTS
+            app.MapCreateAddressEndpoints();
+            app.MapDeleteAddressEndpoints();
+            app.MapGetUserAddressesEndpoints();
+            app.MapSetDefaultAddressEndpoints();
+            app.MapUpdateAddressEndpoints();
+
+            app.MapCreateShipmentEndpoints();
+            app.MapGetDeliveryTrackingEndpoints();
+            app.MapGetShipmentDetailsEndpoints();
+            app.MapUpdateDriverLocationEndpoints();
+            app.MapUpdateShipmentStatusEndpoints();
 
             app.MapGet("/", () => "Ordering Service is running...");
             await app.RunAsync();

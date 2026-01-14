@@ -22,6 +22,11 @@ namespace Ordering_Service.Infrastructure.Data
         public DbSet<Cart> Carts { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
 
+        // Delivery Service Merge
+        public DbSet<UserAddress> UserAddresses { get; set; }
+        public DbSet<Shipment> Shipments { get; set; }
+        public DbSet<DeliveryZone> DeliveryZones { get; set; }
+
         //public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -99,6 +104,27 @@ namespace Ordering_Service.Infrastructure.Data
                 
             modelBuilder.Entity<Cart>().HasQueryFilter(e => !e.IsDeleted);
             modelBuilder.Entity<CartItem>().HasQueryFilter(e => !e.IsDeleted);
+
+            // =========================================================
+            // DELIVERIES & SHIPMENTS (Merged from Delivery Service)
+            // =========================================================
+            modelBuilder.Entity<Shipment>()
+                .HasOne(s => s.DeliveryAddress)
+                .WithMany()
+                .HasForeignKey(s => s.DeliveryAddressId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DeliveryZone>()
+                .Property(d => d.ShippingCost)
+                .HasColumnType("decimal(18,2)");
+
+            modelBuilder.Entity<UserAddress>().HasIndex(a => a.UserId);
+            modelBuilder.Entity<Shipment>().HasIndex(s => s.OrderId);
+            modelBuilder.Entity<Shipment>().HasIndex(s => s.TrackingNumber);
+
+            modelBuilder.Entity<UserAddress>().HasQueryFilter(e => !e.IsDeleted);
+            modelBuilder.Entity<Shipment>().HasQueryFilter(e => !e.IsDeleted);
+            modelBuilder.Entity<DeliveryZone>().HasQueryFilter(e => !e.IsDeleted);
 
             // =========================================================
             // 🗑️ Global Query Filter (Soft Delete)

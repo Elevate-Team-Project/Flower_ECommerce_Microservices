@@ -25,6 +25,7 @@ jobs:
             dockerfile: "Catalog Service/Dockerfile"
             context: .
             tag_name: "catalog"
+          # ✅ Ordering now includes Cart AND Delivery logic
           - name: ordering
             dockerfile: "Ordering Service/Dockerfile"
             context: .
@@ -41,10 +42,7 @@ jobs:
             dockerfile: "API Gateway/Dockerfile"
             context: .
             tag_name: "gateway"
-          - name: delivery
-            dockerfile: "Delivery Service/Dockerfile"
-            context: .
-            tag_name: "delivery"
+          # ❌ Removed Delivery Service (Merged into Ordering)
 
     steps:
       - name: Checkout code

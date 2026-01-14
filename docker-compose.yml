@@ -100,7 +100,6 @@ services:
       - catalogservice
       - orderingservice
       - paymentservice
-      - deliveryservice
     networks:
       - flower_network
 
@@ -212,34 +211,6 @@ services:
       - RabbitMq__Password=guest
       - Stripe__SecretKey=sk_test_placeholder
       - Stripe__PublishableKey=pk_test_placeholder
-    depends_on:
-      sqlserver:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      orderingservice:
-        condition: service_started
-    networks:
-      - flower_network
-
-  # ==========================================
-  # SERVICE 7: Delivery Service
-  # Host Port: 8092
-  # ==========================================
-  deliveryservice:
-    image: ${DOCKER_REGISTRY-}deliveryservice
-    build:
-      context: .
-      dockerfile: "Delivery Service/Dockerfile"
-    ports:
-      - "8092:8080"
-      - "8093:8081"
-    environment:
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=GiftShop_DeliveryDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
-      - RabbitMq__Host=rabbitmq
-      - RabbitMq__Username=guest
-      - RabbitMq__Password=guest
-      - GrpcServices__OrderingServiceUrl=http://orderingservice:8081
     depends_on:
       sqlserver:
         condition: service_healthy
