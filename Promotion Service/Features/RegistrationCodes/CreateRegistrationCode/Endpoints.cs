@@ -1,4 +1,5 @@
 using MediatR;
+using Promotion_Service.Features.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Promotion_Service.Entities;
 

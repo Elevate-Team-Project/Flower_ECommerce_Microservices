@@ -31,5 +31,9 @@ namespace Promotion_Service.Features.Shared
         public static EndpointResponse<T> UnauthorizedResponse(
             string message = "Unauthorized access"
         ) => new(default!, message, false, 401, new() { message });
+
+        public static EndpointResponse<T> ConflictResponse(
+            string message = "Resource conflict"
+        ) => new(default!, message, false, 409, new() { message });
     }
 }

@@ -5,13 +5,35 @@ using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Promotion_Service.Entities;
 using Promotion_Service.Infrastructure;
-using Promotion_Service.Features.RegistrationCodes.CreateRegistrationCode;
-using Promotion_Service.Features.RegistrationCodes.ApplyRegistrationCode;
+using Promotion_Service.MiddleWares;
 using Promotion_Service.Features.RegistrationCodes.ValidateRegistrationCode;
+using Promotion_Service.Features.RegistrationCodes.ApplyRegistrationCode;
+using Promotion_Service.Features.RegistrationCodes.CreateRegistrationCode;
 using Promotion_Service.Features.Loyalty;
+using Promotion_Service.Features.Loyalty.RedeemPoints;
+using Promotion_Service.Features.Loyalty.GetTransactions;
+using Promotion_Service.Features.Loyalty.GetTiers;
+using Promotion_Service.Features.Loyalty.GetBalance;
+using Promotion_Service.Features.Offers.CreateOffer;
+using Promotion_Service.Features.Offers.UpdateOffer;
+using Promotion_Service.Features.Offers.DeleteOffer;
+using Promotion_Service.Features.Offers.GetAllOffers;
+using Promotion_Service.Features.Offers.GetActiveOffers;
+using Promotion_Service.Features.Offers.GetOfferById;
+using Promotion_Service.Features.Coupons.CreateCoupon;
+using Promotion_Service.Features.Coupons.ValidateCoupon;
+using Promotion_Service.Features.Coupons.ApplyCoupon;
+using Promotion_Service.Features.Coupons.GetAllCoupons;
+using Promotion_Service.Features.Coupons.CouponHistory;
+using Promotion_Service.Features.Banners.CreateBanner;
+using Promotion_Service.Features.Banners.UpdateBanner;
+using Promotion_Service.Features.Banners.DeleteBanner;
+using Promotion_Service.Features.Banners.GetAllBanners;
+using Promotion_Service.Features.Banners.GetActiveBanners;
 
 namespace Promotion_Service
 {

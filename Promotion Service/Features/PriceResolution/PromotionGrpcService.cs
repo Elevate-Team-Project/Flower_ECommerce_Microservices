@@ -29,7 +29,7 @@ namespace Promotion_Service.Features.PriceResolution
             {
                 var now = DateTime.UtcNow;
                 var activeOffers = await _offerRepository.GetAll()
-                    .Where(o => o.IsActive && o.ValidFrom <= now && o.ValidUntil >= now)
+                    .Where(o => o.Status == OfferStatus.Active && o.StartDate <= now && o.EndDate >= now)
                     .ToListAsync();
 
                 foreach (var item in request.Items)
@@ -47,7 +47,7 @@ namespace Promotion_Service.Features.PriceResolution
                     
                     // 1. Check Product Offer
                     var productOffer = activeOffers
-                        .FirstOrDefault(o => o.ApplicableProductId == item.ProductId);
+                        .FirstOrDefault(o => o.ProductId == item.ProductId);
 
                     if (productOffer != null)
                     {
@@ -57,7 +57,7 @@ namespace Promotion_Service.Features.PriceResolution
                     {
                         // 2. Check Category Offer
                         var categoryOffer = activeOffers
-                            .FirstOrDefault(o => o.ApplicableCategoryId == item.CategoryId);
+                            .FirstOrDefault(o => o.CategoryId == item.CategoryId);
 
                         if (categoryOffer != null)
                         {
@@ -80,13 +80,18 @@ namespace Promotion_Service.Features.PriceResolution
         private void ApplyOffer(AdjustedPriceItem item, Offer offer)
         {
             decimal discount = 0;
-            if (offer.DiscountType == DiscountType.Percentage)
+            if (offer.Type == OfferType.Percentage)
             {
-                discount = (decimal)item.OriginalPrice * (offer.DiscountAmount / 100m);
+                discount = (decimal)item.OriginalPrice * (offer.DiscountValue / 100m);
+                // Check for max discount amount
+                if (offer.MaxDiscountAmount.HasValue && discount > offer.MaxDiscountAmount.Value)
+                {
+                    discount = offer.MaxDiscountAmount.Value;
+                }
             }
             else // Fixed Amount
             {
-                discount = offer.DiscountAmount;
+                discount = offer.DiscountValue;
             }
 
             // Ensure discount doesn't exceed price
@@ -96,7 +101,9 @@ namespace Promotion_Service.Features.PriceResolution
             item.DiscountAmount = (double)discount;
             item.NewPrice = item.OriginalPrice - (double)discount;
             item.HasDiscount = true;
-            item.OfferName = offer.Title;
+            item.OfferName = offer.Name;
         }
+
+
     }
 }
