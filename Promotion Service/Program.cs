@@ -8,9 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Promotion_Service.Entities;
 using Promotion_Service.Infrastructure;
-using Promotion_Service.MiddleWares;
-using System.Reflection;
-using System.Text;
+using Promotion_Service.Features.RegistrationCodes.CreateRegistrationCode;
+using Promotion_Service.Features.RegistrationCodes.ApplyRegistrationCode;
+using Promotion_Service.Features.RegistrationCodes.ValidateRegistrationCode;
+using Promotion_Service.Features.Loyalty;
 
 namespace Promotion_Service
 {
@@ -38,6 +39,9 @@ namespace Promotion_Service
             builder.Services.AddScoped<IBaseRepository<RegistrationCodeUsage>, BaseRepository<RegistrationCodeUsage>>();
             builder.Services.AddScoped<IBaseRepository<Banner>, BaseRepository<Banner>>();
 
+            // Configuration
+            builder.Services.Configure<LoyaltySettings>(builder.Configuration.GetSection("LoyaltySettings"));
+
             // MediatR
             builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
@@ -47,6 +51,8 @@ namespace Promotion_Service
             // MassTransit (RabbitMQ + Outbox)
             builder.Services.AddMassTransit(x =>
             {
+                x.AddConsumer<Promotion_Service.Features.Loyalty.EarnPoints.OrderDeliveredConsumer>();
+
                 x.AddEntityFrameworkOutbox<PromotionDbContext>(o =>
                 {
                     o.UseSqlServer();
@@ -146,7 +152,15 @@ namespace Promotion_Service
             app.MapUpdateBannerEndpoints();
             app.MapDeleteBannerEndpoints();
 
+            // Map Endpoints - Registration Codes
+            app.MapCreateRegistrationCodeEndpoints();
+            app.MapValidateRegistrationCodeEndpoints();
+            app.MapApplyRegistrationCodeEndpoints();
+
             app.MapGet("/", () => "Promotion Service is running...");
+            
+            // Map gRPC Service
+            app.MapGrpcService<Promotion_Service.Features.PriceResolution.PromotionGrpcService>();
 
             await app.RunAsync();
         }

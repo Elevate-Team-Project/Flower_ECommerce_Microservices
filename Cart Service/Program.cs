@@ -124,6 +124,22 @@ namespace Cart_Service
                 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
 
                 // -------------------------------------------------------------------------------------
+                // gRPC Client Configuration (Catalog Service)
+                // -------------------------------------------------------------------------------------
+                var catalogServiceUrl = config["GrpcServices:Catalog"] ?? "http://localhost:5001";
+                builder.Services.AddGrpcClient<BuildingBlocks.Grpc.CatalogGrpc.CatalogGrpcClient>(options =>
+                {
+                    options.Address = new Uri(catalogServiceUrl);
+                })
+                .ConfigurePrimaryHttpMessageHandler(() =>
+                {
+                    var handler = new HttpClientHandler();
+                    handler.ServerCertificateCustomValidationCallback = 
+                        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+                    return handler;
+                });
+
+                // -------------------------------------------------------------------------------------
                 // MassTransit Configuration (RabbitMQ + Outbox Pattern)
                 // -------------------------------------------------------------------------------------
                 builder.Services.AddMassTransit(x =>

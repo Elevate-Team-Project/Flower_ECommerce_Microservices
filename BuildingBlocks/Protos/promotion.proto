@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option csharp_namespace = "BuildingBlocks.Grpc";
+
+package promotion;
+
+// Promotion Service - provides price calculation and offer info
+service PromotionGrpc {
+    // Get adjusted prices for a list of products
+    rpc GetAdjustedPrices(GetAdjustedPricesRequest) returns (GetAdjustedPricesResponse);
+}
+
+message GetAdjustedPricesRequest {
+    repeated ProductPriceItem items = 1;
+}
+
+message ProductPriceItem {
+    int32 product_id = 1;
+    int32 category_id = 2;
+    double original_price = 3;
+}
+
+message GetAdjustedPricesResponse {
+    bool success = 1;
+    repeated AdjustedPriceItem items = 2;
+}
+
+message AdjustedPriceItem {
+    int32 product_id = 1;
+    double original_price = 2;
+    double new_price = 3;
+    double discount_amount = 4;
+    bool has_discount = 5;
+    string offer_name = 6;
+}

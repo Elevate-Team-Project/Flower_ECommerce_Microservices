@@ -3,6 +3,8 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Ordering_Service.Entities;
 using Ordering_Service.Features.Shared;
+using MassTransit;
+using BuildingBlocks.IntegrationEvents;
 
 namespace Ordering_Service.Features.Orders.UpdateOrderStatus
 {
@@ -10,13 +12,16 @@ namespace Ordering_Service.Features.Orders.UpdateOrderStatus
     {
         private readonly IBaseRepository<Order> _orderRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPublishEndpoint _publishEndpoint;
 
         public UpdateOrderStatusHandler(
             IBaseRepository<Order> orderRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IPublishEndpoint publishEndpoint)
         {
             _orderRepository = orderRepository;
             _unitOfWork = unitOfWork;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<EndpointResponse<bool>> Handle(
@@ -48,6 +53,15 @@ namespace Ordering_Service.Features.Orders.UpdateOrderStatus
                     break;
                 case "Delivered":
                     order.DeliveredAt = DateTime.UtcNow;
+                    
+                    // Publish OrderDeliveredEvent for Loyalty Service
+                    await _publishEndpoint.Publish(new OrderDeliveredEvent(
+                        order.Id,
+                        order.UserId,
+                        order.TotalAmount,
+                        DateTime.UtcNow
+                    ), cancellationToken);
+                    
                     break;
             }
 

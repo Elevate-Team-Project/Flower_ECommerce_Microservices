@@ -2,6 +2,8 @@ using BuildingBlocks.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Promotion_Service.Entities;
+using Microsoft.Extensions.Options;
+using Promotion_Service.Features.Loyalty;
 using Promotion_Service.Features.Shared;
 
 namespace Promotion_Service.Features.Loyalty.RedeemPoints
@@ -11,22 +13,20 @@ namespace Promotion_Service.Features.Loyalty.RedeemPoints
         private readonly IBaseRepository<LoyaltyAccount> _accountRepository;
         private readonly IBaseRepository<LoyaltyTransaction> _transactionRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly LoyaltySettings _settings;
         private readonly ILogger<RedeemPointsHandler> _logger;
-
-        // Points to currency conversion rate (e.g., 10 points = 1 EGP)
-        private const decimal PointsToCurrencyRate = 0.1m;
-        // Maximum percentage of order that can be paid with points
-        private const decimal MaxRedemptionPercentage = 0.5m;
 
         public RedeemPointsHandler(
             IBaseRepository<LoyaltyAccount> accountRepository,
             IBaseRepository<LoyaltyTransaction> transactionRepository,
             IUnitOfWork unitOfWork,
+            IOptions<LoyaltySettings> settings,
             ILogger<RedeemPointsHandler> logger)
         {
             _accountRepository = accountRepository;
             _transactionRepository = transactionRepository;
             _unitOfWork = unitOfWork;
+            _settings = settings.Value;
             _logger = logger;
         }
 
@@ -50,8 +50,8 @@ namespace Promotion_Service.Features.Loyalty.RedeemPoints
             // Calculate max redeemable based on order amount
             if (request.OrderAmount.HasValue)
             {
-                var maxDiscount = request.OrderAmount.Value * MaxRedemptionPercentage;
-                var maxPoints = (int)(maxDiscount / PointsToCurrencyRate);
+                var maxDiscount = request.OrderAmount.Value * _settings.MaxRedemptionPercentage;
+                var maxPoints = (int)(maxDiscount / _settings.RedemptionRate);
 
                 if (request.Points > maxPoints)
                     return EndpointResponse<RedemptionResult>.ErrorResponse(
@@ -59,7 +59,7 @@ namespace Promotion_Service.Features.Loyalty.RedeemPoints
             }
 
             // Calculate discount value
-            var discountValue = request.Points * PointsToCurrencyRate;
+            var discountValue = request.Points * _settings.RedemptionRate;
 
             // Update account
             account.CurrentPoints -= request.Points;

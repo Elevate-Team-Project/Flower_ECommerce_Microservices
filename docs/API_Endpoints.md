@@ -220,7 +220,7 @@
 | Cart | 6 |
 | Ordering | 7 |
 | Delivery | 10 |
-| Promotion | 21 |
+| Promotion | 24 |
 | Audit | 1 |
 | Notification | 1 |
 | Payment | 1 |
