@@ -1,5 +1,11 @@
 using MassTransit;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Notification_Service.Features.Inventory;
+using Notification_Service.Features.Notifications.GetNotifications;
+using Notification_Service.Features.Notifications.MarkRead;
+using Notification_Service.Features.Notifications.Consumers;
+using Notification_Service.Infrastructure;
 using Notification_Service.Services;
 
 namespace Notification_Service
@@ -15,6 +21,14 @@ namespace Notification_Service
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            // Database
+            builder.Services.AddDbContext<NotificationDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // MediatR
+            builder.Services.AddMediatR(cfg => 
+                cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
             // Services
             builder.Services.AddScoped<IEmailSender, MockEmailSender>();
 
@@ -22,6 +36,8 @@ namespace Notification_Service
             builder.Services.AddMassTransit(x =>
             {
                 x.AddConsumer<ProductLowStockConsumer>();
+                x.AddConsumer<OrderStatusChangedConsumer>();
+                x.AddConsumer<OfferCreatedConsumer>();
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
@@ -37,6 +53,13 @@ namespace Notification_Service
 
             var app = builder.Build();
 
+            // Apply migrations
+            using (var scope = app.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<NotificationDbContext>();
+                context.Database.Migrate();
+            }
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -47,6 +70,10 @@ namespace Notification_Service
             //app.UseHttpsRedirection();
             app.MapGet("/", () => "Notification Service is running...");
             app.UseAuthorization();
+
+            // Map notification endpoints
+            app.MapGetNotificationsEndpoints();
+            app.MapMarkReadEndpoints();
 
             app.Run();
         }

@@ -20,7 +20,18 @@ namespace Delivery_Service.Entities
         public string? RecipientPhone { get; set; }
         public string? GiftMessage { get; set; }
 
+        // Driver Location Tracking (US-E02)
+        public double? DriverLatitude { get; set; }
+        public double? DriverLongitude { get; set; }
+        public DateTime? LastLocationUpdate { get; set; }
+        
+        // Delivery Hero Info (US-E02)
+        public string? DriverName { get; set; }
+        public string? DriverPhone { get; set; }
+        public string? DriverPhotoUrl { get; set; }
+
         // Navigation Property
         public virtual UserAddress? DeliveryAddress { get; set; }
     }
 }
+

@@ -9,6 +9,8 @@ using Delivery_Service.Features.Addresses.SetDefaultAddress;
 using Delivery_Service.Features.Shipments.CreateShipment;
 using Delivery_Service.Features.Shipments.UpdateShipmentStatus;
 using Delivery_Service.Features.Shipments.GetShipmentDetails;
+using Delivery_Service.Features.Shipments.UpdateDriverLocation;
+using Delivery_Service.Features.Shipments.GetDeliveryTracking;
 using Delivery_Service.Infrastructure;
 using Delivery_Service.Infrastructure.Data;
 using Delivery_Service.Infrastructure.UnitOfWork;
@@ -114,6 +116,11 @@ namespace Delivery_Service
             app.MapCreateShipmentEndpoints();
             app.MapUpdateShipmentStatusEndpoints();
             app.MapGetShipmentDetailsEndpoints();
+            
+            // Map Tracking Endpoints (US-E02)
+            app.MapUpdateDriverLocationEndpoints();
+            app.MapGetDeliveryTrackingEndpoints();
+            
             app.MapGet("/", () => "Delivery Service is running...");
 
             await app.RunAsync();

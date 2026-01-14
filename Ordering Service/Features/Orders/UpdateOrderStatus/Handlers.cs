@@ -72,6 +72,16 @@ namespace Ordering_Service.Features.Orders.UpdateOrderStatus
                 order.Notes = request.Notes;
             }
 
+            // Publish OrderStatusChangedEvent for Notification Service
+            await _publishEndpoint.Publish(new OrderStatusChangedEvent
+            {
+                OrderId = order.Id,
+                UserId = order.UserId,
+                OldStatus = order.Status,
+                NewStatus = request.NewStatus,
+                ChangedAt = DateTime.UtcNow
+            }, cancellationToken);
+
             _orderRepository.Update(order);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
