@@ -1,7 +1,5 @@
-﻿using MediatR;
+﻿using Auth_Service.Features.Shared;
+using MediatR;
 
-namespace Auth.Features.Auth.ForgetPassword.OTP
-{
-    public record VerifyOtpCommand(string Email, string OtpCode) : IRequest<bool>;
-
-}
+public record VerifyOtpCommand(string Email, string OtpCode)
+    : IRequest<RequestResponse<bool>>;

@@ -101,7 +101,7 @@ namespace Delivery_Service
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseAuthorization();
 
             // Map Address Endpoints
@@ -115,6 +115,7 @@ namespace Delivery_Service
             app.MapCreateShipmentEndpoints();
             app.MapUpdateShipmentStatusEndpoints();
             app.MapGetShipmentDetailsEndpoints();
+            app.MapGet("/", () => "Delivery Service is running...");
 
             await app.RunAsync();
         }

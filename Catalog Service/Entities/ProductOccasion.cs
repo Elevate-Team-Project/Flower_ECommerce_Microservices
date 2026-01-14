@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Catalog_Service.Entities
 {
-    public class ProductOccasion :BaseEntity
+    public class ProductOccasion : BaseEntity
     {
         [ForeignKey(nameof(Product))]
         public int ProductId { get; set; }

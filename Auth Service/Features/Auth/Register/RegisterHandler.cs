@@ -1,6 +1,7 @@
 ﻿using Auth.Contarcts;
 using Auth.Data;
 using Auth.Models;
+using Auth_Service.Features.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -8,20 +9,22 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Auth.Features.Auth.Register
 {
-    public class RegisterHandler : IRequestHandler<RegisterCommand, RegisterResponse>
+
+    public class RegisterHandler
+          : IRequestHandler<RegisterCommand, RequestResponse<RegisterResponse>>
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole<Guid>> _roleManager;
         private readonly ITokenService _tokenService;
         private readonly IMemoryCache _cache;
-        private readonly FlowerEcommerceAuthContext _db; // Inject your Identity DbContext
+        private readonly FlowerEcommerceAuthContext _db;
 
         public RegisterHandler(
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole<Guid>> roleManager,
             ITokenService tokenService,
             IMemoryCache cache,
-            FlowerEcommerceAuthContext  dbContext // pass your ApplicationDbContext
+            FlowerEcommerceAuthContext dbContext
         )
         {
             _userManager = userManager;
@@ -31,19 +34,16 @@ namespace Auth.Features.Auth.Register
             _db = dbContext;
         }
 
-        public async Task<RegisterResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
+        public async Task<RequestResponse<RegisterResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
             var dto = request.RegisterDto;
 
-            // ========== 🔒 Start Transaction ==========
             using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
 
-            // Check existing user
             var existingUser = await _userManager.FindByEmailAsync(dto.Email);
             if (existingUser != null)
-                throw new ApplicationException("Email already registered.");
+                return RequestResponse<RegisterResponse>.Fail("Email already registered.");
 
-            // Create user object
             var user = new ApplicationUser
             {
                 FirstName = dto.FirstName,
@@ -52,22 +52,19 @@ namespace Auth.Features.Auth.Register
                 Email = dto.Email,
                 UserName = dto.Email,
                 PhoneNumber = dto.PhoneNumber,
-                Gender=dto.Gender,
+                Gender = dto.Gender,
                 EmailConfirmed = true,
                 ProfileImageUrl = "/images/users/default-user.png",
-             
                 CreatedAt = DateTime.UtcNow
             };
 
-            // Insert user
             var result = await _userManager.CreateAsync(user, dto.Password);
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new ApplicationException($"User creation failed: {errors}");
+                return RequestResponse<RegisterResponse>.Fail($"User creation failed: {errors}");
             }
 
-            // =============== ⭐ Cached Role Check ===============
             string userRoleKey = "role_exists_user";
 
             bool roleExists = await _cache.GetOrCreateAsync(userRoleKey, async entry =>
@@ -79,17 +76,14 @@ namespace Auth.Features.Auth.Register
             if (roleExists)
                 await _userManager.AddToRoleAsync(user, "User");
 
-            // Commit transaction
             await transaction.CommitAsync();
 
-            // Get roles from user (only one DB call but cached later in TokenService)
             var roles = await _userManager.GetRolesAsync(user);
 
-            // Generate tokens
-            var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(user, dto.RememberMe);
+            var (accessToken, refreshToken) =
+                await _tokenService.GenerateTokensAsync(user, dto.RememberMe);
 
-            // Response
-            return new RegisterResponse(
+            var response = new RegisterResponse(
                 Success: true,
                 Message: "Registration successful",
                 UserId: user.Id,
@@ -99,13 +93,14 @@ namespace Auth.Features.Auth.Register
                 FullName: user.FullName,
                 Email: user.Email,
                 Gender: user.Gender,
-               
                 PhoneNumber: user.PhoneNumber,
                 ProfileImageUrl: user.ProfileImageUrl,
                 Roles: roles,
                 Token: accessToken,
                 RefreshToken: refreshToken
             );
+
+            return RequestResponse<RegisterResponse>.Success(response, "Registration successful");
         }
     }
 }

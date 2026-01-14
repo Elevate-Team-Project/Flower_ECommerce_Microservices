@@ -94,7 +94,7 @@ namespace Ordering_Service
             if (app.Environment.IsDevelopment())
             {
                 using var scope = app.Services.CreateScope();
-                await DatabaseSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<OrderingDbContext>());
+                //await DatabaseSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<OrderingDbContext>());
             }
 
             app.UseErrorHandling();
@@ -105,7 +105,7 @@ namespace Ordering_Service
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
             app.UseAuthorization();
 
             // Map gRPC Service
@@ -116,7 +116,7 @@ namespace Ordering_Service
             app.MapGetUserOrdersEndpoints();
             app.MapGetOrderDetailsEndpoints();
             app.MapUpdateOrderStatusEndpoints();
-
+            app.MapGet("/", () => "Ordering Service is running...");
             await app.RunAsync();
         }
     }

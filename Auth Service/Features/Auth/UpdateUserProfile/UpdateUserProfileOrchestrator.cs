@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Auth.Contarcts;
+using Auth_Service.Features.Shared;
 
 namespace Auth.Features.Auth.UpdateUserProfile
 {
@@ -14,19 +15,18 @@ namespace Auth.Features.Auth.UpdateUserProfile
             _imageHelper = imageHelper;
         }
 
-        public async Task<UpdateUserProfileResponse> UpdateUserProfileAsync(Guid userId, UpdateUserProfileRequest request, string? currentImageUrl = null)
+        public async Task<RequestResponse<UpdateUserProfileResponse>> UpdateUserProfileAsync(
+            Guid userId,
+            UpdateUserProfileRequest request,
+            string? currentImageUrl = null)
         {
             string? imageUrl = currentImageUrl;
 
             if (request.ProfileImage is not null && request.ProfileImage.Length > 0)
             {
-                // Delete old image if exists
                 if (!string.IsNullOrEmpty(currentImageUrl))
-                {
                     _imageHelper.DeleteImage(currentImageUrl);
-                }
 
-                // Save new image
                 imageUrl = await _imageHelper.SaveImageAsync(request.ProfileImage, "Users");
             }
 
@@ -35,10 +35,8 @@ namespace Auth.Features.Auth.UpdateUserProfile
                 request.FirstName,
                 request.LastName,
                 request.PhoneNumber,
-                imageUrl          // ProfileImage
-                   
+                imageUrl
             );
-
 
             return await _mediator.Send(command);
         }

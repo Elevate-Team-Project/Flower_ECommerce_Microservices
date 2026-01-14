@@ -44,18 +44,7 @@ services:
     networks:
       - flower_network
 
-  # ==========================================
-  # 4. Infrastructure: MongoDB (For Audit Service)
-  # ==========================================
-  mongo:
-    image: mongo:latest
-    container_name: flower_mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    networks:
-      - flower_network
+  # (?? ??? MongoDB ?? ???)
 
   # ==========================================
   # 5. Service: Catalog Service
@@ -191,10 +180,11 @@ services:
       - "8102:8080"
       - "8103:8081"
     environment:
-      - ConnectionStrings__MongoDb=mongodb://mongo:27017
+      # ?? ????? ??????? ????? SQL Server ????? ?? Mongo
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=AuditDB;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
       - RabbitMq__Host=rabbitmq
     depends_on:
-      - mongo
+      - sqlserver  # ???? ????? ??? SQL
       - rabbitmq
     networks:
       - flower_network
@@ -224,7 +214,6 @@ volumes:
   sql_data:
   rabbitmq_data:
   redis_data:
-  mongo_data:
 
 networks:
   flower_network:
