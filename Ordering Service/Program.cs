@@ -6,6 +6,7 @@ using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Ordering_Service.Entities;
+using Ordering_Service.Features.Orders;
 using Ordering_Service.Features.Orders.ConfirmOrder;
 using Ordering_Service.Features.Orders.CreateOrder;
 using Ordering_Service.Features.Orders.GetOrderDetails;
@@ -117,6 +118,10 @@ namespace Ordering_Service
             app.MapGetUserOrdersEndpoints();
             app.MapGetOrderDetailsEndpoints();
             app.MapUpdateOrderStatusEndpoints();
+            app.MapGetOrdersStatusEndpoints();
+
+            // Note: Shipment endpoints have been moved to Delivery Service
+
             app.MapGet("/", () => "Ordering Service is running...");
             await app.RunAsync();
         }

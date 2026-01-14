@@ -75,6 +75,7 @@ namespace Catalog_Service
                 // builder.Services.AddScoped<ICurrentUserService, CurrentUserService>(); 
                 // builder.Services.AddScoped<TransactionMiddleware>(); 
                  builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
                 builder.Services.AddStackExchangeRedisCache(options =>
                 {
                     var redisUrl = builder.Configuration["Redis:Url"];
@@ -117,12 +118,13 @@ namespace Catalog_Service
 
                     builder.Services.AddScoped(interfaceType, implementationType);
                 }
-             
+                builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+
                 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
                 Log.Information("Registered {Count} generic repositories successfully", entityTypes.Count);
 
-                builder.Services.AddMediatR(typeof(Program).Assembly);;
+                builder.Services.AddMediatR(typeof(Program).Assembly); 
 
                 // -------------------------------------------------------------------------------------
                 // MassTransit Configuration (RabbitMQ + Outbox Pattern)

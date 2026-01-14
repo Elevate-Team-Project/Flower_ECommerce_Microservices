@@ -18,6 +18,8 @@ namespace Ordering_Service.Infrastructure.Data
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<DiscountUsage> DiscountUsages { get; set; }
 
+        //public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
