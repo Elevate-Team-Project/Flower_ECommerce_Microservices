@@ -1,3 +1,6 @@
+using MassTransit;
+using Notification_Service.Features.Inventory;
+using Notification_Service.Services;
 
 namespace Notification_Service
 {
@@ -9,10 +12,28 @@ namespace Notification_Service
 
             // Add services to the container.
             builder.Services.AddAuthorization();
-
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            // Services
+            builder.Services.AddScoped<IEmailSender, MockEmailSender>();
+
+            // MassTransit
+            builder.Services.AddMassTransit(x =>
+            {
+                x.AddConsumer<ProductLowStockConsumer>();
+
+                x.UsingRabbitMq((context, cfg) =>
+                {
+                    var rabbitMqHost = builder.Configuration["RabbitMq:Host"] ?? "localhost";
+                    cfg.Host(rabbitMqHost, "/", h => {
+                        h.Username("guest");
+                        h.Password("guest");
+                    });
+
+                    cfg.ConfigureEndpoints(context);
+                });
+            });
 
             var app = builder.Build();
 

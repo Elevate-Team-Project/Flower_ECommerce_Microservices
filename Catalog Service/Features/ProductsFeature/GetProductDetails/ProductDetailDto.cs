@@ -8,8 +8,9 @@
         public string Description { get; set; }
 
         public decimal Price { get; set; }
+        public decimal? DiscountedPrice { get; set; }
         public decimal Tax { get; set; }
-        public decimal FinalPrice => Price + Tax;
+        public decimal FinalPrice => (DiscountedPrice ?? Price) + Tax;
 
         public bool InStock { get; set; }
         public int StockQuantity { get; set; }

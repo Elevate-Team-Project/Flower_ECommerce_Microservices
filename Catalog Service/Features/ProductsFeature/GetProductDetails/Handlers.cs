@@ -42,6 +42,7 @@ namespace Catalog_Service.Features.ProductsFeature.GetProductDetails
                 Name = product.Name,
                 Description = product.Description,
                 Price = product.Price,
+                DiscountedPrice = product.DiscountedPrice,
                 Tax = tax,
                 StockQuantity = product.StockQuantity,
                 InStock = product.StockQuantity > 0 && product.IsAvailable,

@@ -14,6 +14,10 @@ namespace Catalog_Service.Entities
         public int MinStock { get; set; }
         public int MaxStock { get; set; }
         public bool IsAvailable { get; set; }
+        
+        // Offer/Discount Info
+        public decimal? DiscountedPrice { get; set; }
+        public int? ActiveOfferId { get; set; }
 
 
 
