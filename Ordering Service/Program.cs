@@ -6,6 +6,7 @@ using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Ordering_Service.Entities;
+using Ordering_Service.Features.Orders.ConfirmOrder;
 using Ordering_Service.Features.Orders.CreateOrder;
 using Ordering_Service.Features.Orders.GetOrderDetails;
 using Ordering_Service.Features.Orders.GetUserOrders;
