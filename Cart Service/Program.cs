@@ -1,5 +1,8 @@
 using BuildingBlocks.Interfaces;
 using BuildingBlocks.SharedEntities; // Ensure this contains BaseEntity if needed
+using Cart_Service.Features.Cart.AddToCart;
+using Cart_Service.Features.Cart.Checkout;
+using Cart_Service.Features.Cart.RemoveCartItem;
 using Cart_Service.Features.Cart.UpdateProductQuantityInShoppingCart;
 using Cart_Service.Features.Cart.ViewShoppingCart;
 using Cart_Service.Infrastructure;
@@ -261,7 +264,9 @@ namespace Cart_Service
                     return Results.Ok(carts);
                 });
                 app.MapViewCartEndpoints();
-
+                app.MapAddToCartEndpoints();
+                app.MapRemoveCartItemEndpoints();
+                app.MapCheckoutEndpoints();
                 app.MapUpdateItemQuantityEndpoints();
                 await app.RunAsync();
             }

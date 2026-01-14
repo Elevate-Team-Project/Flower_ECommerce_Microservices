@@ -59,10 +59,27 @@
 
 | HTTP Method | Full URL | Description | Required Body/Params |
 |-------------|----------|-------------|---------------------|
-| GET | `http://72.61.102.216:8888/api/cart/health` | Health check endpoint | None |
-| GET | `http://72.61.102.216:8888/api/cart/carts` | Get all carts | None |
+| GET | `/api/cart/health` | Health check endpoint | None |
+| GET | `/api/v1/cart` | View shopping cart (US-D02) | Bearer Token |
+| POST | `/api/cart/items` | Add product to cart (US-D01) | JSON: `{ productId, quantity }` |
+| PUT | `/api/v1/cart/items/{productId}` | Update item quantity (US-D03) | JSON: `{ quantity }` |
+| DELETE | `/api/cart/items/{productId}` | Remove item from cart (US-D04) | Bearer Token |
+| POST | `/api/cart/checkout` | Checkout and place order (US-D07) | JSON: `CheckoutRequest` |
 
-> ⚠️ **Note:** Cart Service has placeholder endpoint files. Additional cart operations (AddToCart, Checkout, etc.) are not yet implemented.
+### Checkout Request Body
+```json
+{
+  "deliveryAddressId": 5,
+  "shippingAddress": "...",  // Manual address (optional)
+  "paymentMethod": "CashOnDelivery",  // or "CreditCard"
+  "couponCode": "SAVE10",
+  "notes": "Please deliver quickly",
+  "isGift": true,
+  "recipientName": "John",
+  "recipientPhone": "+201234567890",
+  "giftMessage": "Happy Birthday!"
+}
+```
 
 ---
 
@@ -200,7 +217,7 @@
 |---------|-----------------|
 | Auth | 9 |
 | Catalog | 16 |
-| Cart | 2 |
+| Cart | 6 |
 | Ordering | 7 |
 | Delivery | 10 |
 | Promotion | 21 |
