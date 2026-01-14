@@ -44,13 +44,14 @@ namespace Catalog_Service.Features.ProductsFeature.StockManagement
                     if (product.StockQuantity <= product.MinStock)
                     {
                         _logger.LogWarning("Product {ProductId} is Low Stock! Current: {Current}, Min: {Min}", product.Id, product.StockQuantity, product.MinStock);
-                        
-                        await context.Publish(new ProductLowStockEvent(
-                            product.Id,
-                            product.Name,
-                            product.StockQuantity,
-                            product.MinStock
-                        ));
+
+                        await context.Publish(new ProductLowStockEvent
+                        {
+                            ProductId = product.Id,
+                            ProductName = product.Name,
+                            CurrentStock = product.StockQuantity,
+                            MinStock = product.MinStock
+                        });
                     }
 
                     _logger.LogInformation("Stock updated for Product {ProductId}. New Stock: {StockQuantity}", product.Id, product.StockQuantity);
