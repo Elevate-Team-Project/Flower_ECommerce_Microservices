@@ -1,11 +1,12 @@
 ﻿using Catalog_Service.Features.Shared;
 using MediatR;
+using Microsoft.AspNetCore.Builder;
 
 namespace Catalog_Service.Features.OccasionsFeature.DeleteOccasion;
 
 public static class Endpoints
 {
-    public static void MapDeleteOccasionEndpoints(WebApplication app)
+    public static void MapDeleteOccasionEndpoints(IEndpointRouteBuilder app)
     {
         app.MapDelete("/occasions/{id:int}",
             async (int id, IMediator mediator, CancellationToken ct) =>

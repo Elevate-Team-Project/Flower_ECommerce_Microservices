@@ -1,11 +1,12 @@
 ﻿using Catalog_Service.Features.Shared;
 using MediatR;
+using Microsoft.AspNetCore.Builder;
 
 namespace Catalog_Service.Features.CategoriesFeature.DeleteCategory;
 
 public static class Endpoints
 {
-    public static void MapDeleteCategoryEndpoints(WebApplication app)
+    public static void MapDeleteCategoryEndpoints(IEndpointRouteBuilder app)
     {
         app.MapDelete("/categories/{id:int}",
             async (int id, IMediator mediator, CancellationToken ct) =>

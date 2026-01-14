@@ -3,6 +3,7 @@ using BuildingBlocks.SharedEntities; // Ensure this contains BaseEntity if neede
 using Cart_Service.Features.Cart.UpdateProductQuantityInShoppingCart;
 using Cart_Service.Infrastructure;
 using Cart_Service.Infrastructure.Data; // Update to match your actual namespace
+using Cart_Service.Infrastructure.UnitOfWork;
 using MassTransit;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -54,7 +55,7 @@ namespace Cart_Service
 
                 // Common Services
                 // builder.Services.AddScoped<ICurrentUserService, CurrentUserService>(); 
-                // builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+                builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
                 // -------------------------------------------------------------------------------------
                 // Redis Configuration (Robust Logic)
