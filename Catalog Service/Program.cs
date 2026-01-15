@@ -275,8 +275,8 @@ namespace Catalog_Service
                     try
                     {
                         var context = services.GetRequiredService<ApplicationDbContext>();
-                        await context.Database.MigrateAsync();
-                        await DatabaseSeeder.SeedAsync(services);
+                        //await context.Database.MigrateAsync();
+                        //await DatabaseSeeder.SeedAsync(services);
                     }
                     catch (Exception ex)
                     {
