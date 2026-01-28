@@ -51,6 +51,7 @@
 
   <ItemGroup>
     <Folder Include="Contracts\" />
+    <Folder Include="Features\Track Delivary on Map\" />
   </ItemGroup>
 
   <ItemGroup>

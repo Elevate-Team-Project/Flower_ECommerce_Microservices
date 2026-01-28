@@ -15,7 +15,7 @@ namespace Delivery_Service.Entities
         public string? Notes { get; set; }
 
         // Gift order fields
-        public bool IsGift { get; set; } = false;
+        public bool IsGift { get; set; } = false; 
         public string? RecipientName { get; set; }
         public string? RecipientPhone { get; set; }
         public string? GiftMessage { get; set; }
