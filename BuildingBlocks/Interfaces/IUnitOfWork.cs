@@ -8,7 +8,7 @@ namespace BuildingBlocks.Interfaces
 {
     public interface IUnitOfWork : IDisposable
     {
-        // Transaction Methods
+        // Transaction Methods -- updated to include async versions
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);
         Task<int> SaveChangesAsync();
 
