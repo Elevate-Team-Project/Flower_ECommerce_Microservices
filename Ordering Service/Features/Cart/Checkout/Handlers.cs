@@ -4,8 +4,15 @@ using Ordering_Service.Features.Shared;
 using MassTransit;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using BuildingBlocks.Grpc;
 using Ordering_Service.Infrastructure.Data;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using BuildingBlocks.IntegrationEvents;
 
 namespace Ordering_Service.Features.Cart.Checkout
 {
@@ -15,7 +22,7 @@ namespace Ordering_Service.Features.Cart.Checkout
         private readonly IBaseRepository<CartItem> _cartItemRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPublishEndpoint _publishEndpoint;
-        private readonly PromotionGrpc.PromotionGrpcClient _promotionGrpcClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<CheckoutHandler> _logger;
 
         private const decimal DELIVERY_FEE = 50m;
@@ -25,14 +32,14 @@ namespace Ordering_Service.Features.Cart.Checkout
             IBaseRepository<CartItem> cartItemRepository,
             IUnitOfWork unitOfWork,
             IPublishEndpoint publishEndpoint,
-            PromotionGrpc.PromotionGrpcClient promotionGrpcClient,
+            IHttpClientFactory httpClientFactory,
             ILogger<CheckoutHandler> logger)
         {
             _cartRepository = cartRepository;
             _cartItemRepository = cartItemRepository;
             _unitOfWork = unitOfWork;
             _publishEndpoint = publishEndpoint;
-            _promotionGrpcClient = promotionGrpcClient;
+            _httpClientFactory = httpClientFactory;
             _logger = logger;
         }
 
@@ -60,30 +67,37 @@ namespace Ordering_Service.Features.Cart.Checkout
             var subTotal = cart.Items.Sum(i => i.UnitPrice * i.Quantity);
             decimal discountAmount = 0; 
             
+            var client = _httpClientFactory.CreateClient("CatalogService");
+
             // 1. Validate Coupon
             if (!string.IsNullOrEmpty(request.CouponCode))
             {
                 try
                 {
-                    var couponResponse = await _promotionGrpcClient.ValidateCouponAsync(new ValidateCouponRequest 
-                    { 
-                        CouponCode = request.CouponCode,
-                        UserId = request.UserId,
-                        CartTotal = (double)subTotal
-                    }, cancellationToken: cancellationToken);
-
-                    if (couponResponse.Success)
+                    var couponReq = new { Code = request.CouponCode, OrderAmount = subTotal };
+                    var httpResponse = await client.PostAsJsonAsync("/api/coupons/validate", couponReq, cancellationToken);
+                    
+                    if (httpResponse.IsSuccessStatusCode)
                     {
-                        discountAmount += (decimal)couponResponse.DiscountAmount;
+                        var responseResult = await httpResponse.Content.ReadFromJsonAsync<EndpointResponse<CouponValidationResultDto>>(cancellationToken: cancellationToken);
+                        if (responseResult != null && responseResult.IsSuccess && responseResult.Data != null)
+                        {
+                            discountAmount += responseResult.Data.CalculatedDiscount ?? 0;
+                        }
+                        else
+                        {
+                            return EndpointResponse<CheckoutResultDto>.ErrorResponse($"Invalid Coupon: {responseResult?.Message ?? "Validation failed"}");
+                        }
                     }
                     else
                     {
-                        return EndpointResponse<CheckoutResultDto>.ErrorResponse($"Invalid Coupon: {couponResponse.Message}");
+                        var errorResult = await httpResponse.Content.ReadFromJsonAsync<EndpointResponse<object>>(cancellationToken: cancellationToken);
+                        return EndpointResponse<CheckoutResultDto>.ErrorResponse($"Invalid Coupon: {errorResult?.Message ?? "Validation failed"}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to validate coupon via gRPC");
+                    _logger.LogError(ex, "Failed to validate coupon via HTTP");
                     return EndpointResponse<CheckoutResultDto>.ErrorResponse("Unable to validate coupon currently. Please try again.");
                 }
             }
@@ -94,26 +108,31 @@ namespace Ordering_Service.Features.Cart.Checkout
             {
                 try
                 {
-                    var pointsResponse = await _promotionGrpcClient.RedeemPointsAsync(new RedeemPointsRequest
-                    {
-                        UserId = request.UserId,
-                        PointsToRedeem = request.PointsToRedeem.Value,
-                        CartTotal = (double)(subTotal - discountAmount) // deducting coupon discount first? Or strictly subtotal? Let's use remaining.
-                    }, cancellationToken: cancellationToken);
+                    var redeemReq = new { Points = request.PointsToRedeem.Value, OrderAmount = subTotal - discountAmount };
+                    var httpResponse = await client.PostAsJsonAsync("/api/loyalty/redeem", redeemReq, cancellationToken);
 
-                    if (pointsResponse.Success)
+                    if (httpResponse.IsSuccessStatusCode)
                     {
-                        loyaltyDiscount = (decimal)pointsResponse.DiscountAmount;
-                        discountAmount += loyaltyDiscount;
+                        var responseResult = await httpResponse.Content.ReadFromJsonAsync<EndpointResponse<RedemptionResultDto>>(cancellationToken: cancellationToken);
+                        if (responseResult != null && responseResult.IsSuccess && responseResult.Data != null)
+                        {
+                            loyaltyDiscount = responseResult.Data.DiscountValue;
+                            discountAmount += loyaltyDiscount;
+                        }
+                        else
+                        {
+                            return EndpointResponse<CheckoutResultDto>.ErrorResponse($"Loyalty Redemption Failed: {responseResult?.Message ?? "Redemption failed"}");
+                        }
                     }
                     else
                     {
-                        return EndpointResponse<CheckoutResultDto>.ErrorResponse($"Loyalty Redemption Failed: {pointsResponse.Message}");
+                        var errorResult = await httpResponse.Content.ReadFromJsonAsync<EndpointResponse<object>>(cancellationToken: cancellationToken);
+                        return EndpointResponse<CheckoutResultDto>.ErrorResponse($"Loyalty Redemption Failed: {errorResult?.Message ?? "Redemption failed"}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to redeem points via gRPC");
+                    _logger.LogError(ex, "Failed to redeem points via HTTP");
                     return EndpointResponse<CheckoutResultDto>.ErrorResponse("Unable to process points redemption. Please try again.");
                 }
             }
@@ -124,7 +143,7 @@ namespace Ordering_Service.Features.Cart.Checkout
             var orderEvent = new CartCheckoutEvent
             {
                 UserId = request.UserId,
-                Items = cart.Items.Select(i => new CartCheckoutItem
+                Items = cart.Items.Select(i => new CartCheckoutItemDto
                 {
                     ProductId = i.ProductId,
                     ProductName = i.ProductName,
@@ -169,7 +188,7 @@ namespace Ordering_Service.Features.Cart.Checkout
             var orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
 
             var result = new CheckoutResultDto(
-                OrderId: 0, // Will be assigned by Ordering Service
+                OrderId: 0, 
                 OrderNumber: orderNumber,
                 SubTotal: subTotal,
                 DeliveryFee: DELIVERY_FEE,
@@ -187,33 +206,21 @@ namespace Ordering_Service.Features.Cart.Checkout
         }
     }
 
-    // Event to publish to Ordering Service
-    public class CartCheckoutEvent
-    {
-        public string UserId { get; set; } = string.Empty;
-        public List<CartCheckoutItem> Items { get; set; } = new();
-        public int? DeliveryAddressId { get; set; }
-        public string? ShippingAddress { get; set; }
-        public string PaymentMethod { get; set; } = string.Empty;
-        public string? Notes { get; set; }
-        public string? CouponCode { get; set; }
-        public decimal SubTotal { get; set; }
-        public decimal DeliveryFee { get; set; }
-        public decimal DiscountAmount { get; set; }
-        public decimal TotalAmount { get; set; }
-        public bool IsGift { get; set; }
-        public string? RecipientName { get; set; }
-        public string? RecipientPhone { get; set; }
-        public string? GiftMessage { get; set; }
-        public int PointsRedeemed { get; set; }
-    }
+    public record CouponValidationResultDto(
+        bool IsValid,
+        string? ErrorMessage,
+        int? CouponId,
+        string? Code,
+        int? Type,
+        decimal? DiscountValue,
+        decimal? MaxDiscountAmount,
+        decimal? CalculatedDiscount
+    );
 
-    public class CartCheckoutItem
-    {
-        public int ProductId { get; set; }
-        public string ProductName { get; set; } = string.Empty;
-        public decimal UnitPrice { get; set; }
-        public int Quantity { get; set; }
-        public string? ImageUrl { get; set; }
-    }
+    public record RedemptionResultDto(
+        int TransactionId,
+        int PointsRedeemed,
+        decimal DiscountValue,
+        int RemainingBalance
+    );
 }

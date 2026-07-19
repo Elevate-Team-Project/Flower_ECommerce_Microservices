@@ -1,9 +1,10 @@
-using BuildingBlocks.Grpc;
 using BuildingBlocks.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Ordering_Service.Entities;
 using Ordering_Service.Features.Shared;
+using System.Net.Http;
+using System.Net.Http.Json;
 
 namespace Ordering_Service.Features.Orders.ReOrder
 {
@@ -15,18 +16,18 @@ namespace Ordering_Service.Features.Orders.ReOrder
     {
         private readonly IBaseRepository<Order> _orderRepository;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly CatalogGrpc.CatalogGrpcClient _catalogClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<ReOrderHandler> _logger;
 
         public ReOrderHandler(
             IBaseRepository<Order> orderRepository,
             IUnitOfWork unitOfWork,
-            CatalogGrpc.CatalogGrpcClient catalogClient,
+            IHttpClientFactory httpClientFactory,
             ILogger<ReOrderHandler> logger)
         {
             _orderRepository = orderRepository;
             _unitOfWork = unitOfWork;
-            _catalogClient = catalogClient;
+            _httpClientFactory = httpClientFactory;
             _logger = logger;
         }
 
@@ -72,34 +73,32 @@ namespace Ordering_Service.Features.Orders.ReOrder
                     400);
             }
 
-            // 5. Validate products still exist and get current prices via Catalog gRPC
-            var productIds = modifiedItems.Select(i => i.ProductId).ToList();
-            var grpcRequest = new GetProductsByIdsRequest();
-            grpcRequest.ProductIds.AddRange(productIds);
-
-            ProductsResponse productsResponse;
-            try
+            // 5. Validate products still exist and get current prices via Catalog HTTP
+            var productIds = modifiedItems.Select(i => i.ProductId).Distinct().ToList();
+            
+            var httpClient = _httpClientFactory.CreateClient("CatalogService");
+            var tasks = productIds.Select(async id =>
             {
-                productsResponse = await _catalogClient.GetProductsByIdsAsync(
-                    grpcRequest,
-                    cancellationToken: cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to call Catalog gRPC service during reorder");
-                return EndpointResponse<ReOrderResponseDto>.ErrorResponse(
-                    $"Failed to validate products: {ex.Message}",
-                    503);
-            }
+                try
+                {
+                    var response = await httpClient.GetAsync($"api/products/{id}", cancellationToken);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        _logger.LogWarning("Catalog Service returned status {Status} for product {ProductId} during reorder", response.StatusCode, id);
+                        return null;
+                    }
+                    var wrapper = await response.Content.ReadFromJsonAsync<EndpointResponse<CatalogProductDto>>(cancellationToken: cancellationToken);
+                    return wrapper?.Data;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to call Catalog HTTP service for product {ProductId} during reorder", id);
+                    return null;
+                }
+            });
 
-            if (!productsResponse.Success)
-            {
-                return EndpointResponse<ReOrderResponseDto>.ErrorResponse(
-                    $"Failed to validate products: {productsResponse.ErrorMessage}",
-                    400);
-            }
-
-            var products = productsResponse.Products.ToDictionary(p => p.Id);
+            var productsList = (await Task.WhenAll(tasks)).Where(p => p != null).Select(p => p!).ToList();
+            var products = productsList.ToDictionary(p => p.Id);
 
             // Validate all products exist
             var missingProducts = productIds.Where(id => !products.ContainsKey(id)).ToList();
@@ -132,9 +131,9 @@ namespace Ordering_Service.Features.Orders.ReOrder
             var orderItems = modifiedItems.Select(i =>
             {
                 var catalogProduct = products[i.ProductId];
-                var currentPrice = catalogProduct.HasDiscount
-                    ? (decimal)catalogProduct.DiscountedPrice
-                    : (decimal)catalogProduct.Price;
+                var currentPrice = catalogProduct.HasDiscount && catalogProduct.DiscountedPrice.HasValue
+                    ? catalogProduct.DiscountedPrice.Value
+                    : catalogProduct.Price;
                 return new OrderItem
                 {
                     ProductId = i.ProductId,

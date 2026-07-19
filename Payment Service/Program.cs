@@ -9,6 +9,7 @@ using Payment_Service.Features.ProcessPayment;
 using Payment_Service.Infrastructure;
 using Payment_Service.Services;
 using System.Text;
+using Payment_Service.Features.ProcessPayment.Consumers;
 
 namespace Payment_Service
 {
@@ -35,6 +36,8 @@ namespace Payment_Service
             // MassTransit (RabbitMQ + Outbox)
             builder.Services.AddMassTransit(x =>
             {
+                x.AddConsumer<OrderPlacedEventConsumer>();
+
                 x.AddEntityFrameworkOutbox<PaymentDbContext>(o =>
                 {
                     o.UseSqlServer();

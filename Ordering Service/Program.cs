@@ -14,16 +14,7 @@ using Ordering_Service.Features.Cart.RemoveProductQuantityInShoppingCart; // ✅
 using Ordering_Service.Features.Cart.UpdateCartItem; // ✅ NEW
 using Ordering_Service.Features.Cart.UpdateProductQuantityInShoppingCart; // ✅ NEW
 using Ordering_Service.Features.Cart.ViewShoppingCart; // ✅ NEW
-using Ordering_Service.Features.Delivery.Addresses.CreateAddress;
-using Ordering_Service.Features.Delivery.Addresses.DeleteAddress;
-using Ordering_Service.Features.Delivery.Addresses.GetUserAddresses;
-using Ordering_Service.Features.Delivery.Addresses.SetDefaultAddress;
-using Ordering_Service.Features.Delivery.Addresses.UpdateAddress;
-using Ordering_Service.Features.Delivery.Shipments.CreateShipment;
-using Ordering_Service.Features.Delivery.Shipments.GetDeliveryTracking;
-using Ordering_Service.Features.Delivery.Shipments.GetShipmentDetails;
-using Ordering_Service.Features.Delivery.Shipments.UpdateDriverLocation;
-using Ordering_Service.Features.Delivery.Shipments.UpdateShipmentStatus;
+
 using Ordering_Service.Features.Orders;
 using Ordering_Service.Features.Orders.ConfirmOrder;
 using Ordering_Service.Features.Orders.CreateOrder;
@@ -39,6 +30,10 @@ using Ordering_Service.Infrastructure.UnitOfWork;
 using Ordering_Service.MiddleWares;
 using Serilog;
 using System.Reflection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Ordering_Service.Consumers;
+using System.Text;
 
 namespace Ordering_Service
 {
@@ -81,6 +76,10 @@ namespace Ordering_Service
             // MassTransit
             builder.Services.AddMassTransit(x =>
             {
+                x.AddConsumer<CartCheckoutEventConsumer>();
+                x.AddConsumer<PaymentSucceededConsumer>();
+                x.AddConsumer<CodOrderApprovedConsumer>();
+
                 x.AddEntityFrameworkOutbox<OrderingDbContext>(o =>
                 {
                     o.UseSqlServer();
@@ -100,6 +99,34 @@ namespace Ordering_Service
 
             // gRPC Server for Ordering Service
             builder.Services.AddGrpc();
+
+            builder.Services.AddHttpClient("CatalogService", client =>
+            {
+                var catalogUrl = builder.Configuration["ServiceClients:CatalogServiceUrl"] ?? "http://catalogservice:8080/";
+                client.BaseAddress = new Uri(catalogUrl);
+            });
+
+            // JWT Authentication
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                };
+            });
+
+            builder.Services.AddAuthorization();
 
             // gRPC Client for Catalog Service
             var catalogServiceUrl = builder.Configuration["GrpcServices:CatalogServiceUrl"] ?? "https://localhost:5001";
@@ -148,7 +175,7 @@ namespace Ordering_Service
             if (app.Environment.IsDevelopment())
             {
                 using var scope = app.Services.CreateScope();
-                //await DatabaseSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<OrderingDbContext>());
+                await DatabaseSeeder.SeedAsync(scope.ServiceProvider.GetRequiredService<OrderingDbContext>());
             }
 
             app.UseErrorHandling();
@@ -160,6 +187,7 @@ namespace Ordering_Service
             }
 
             //app.UseHttpsRedirection();
+            app.UseAuthentication();
             app.UseAuthorization();
 
             // Map gRPC Service
@@ -174,6 +202,29 @@ namespace Ordering_Service
             app.MapReOrderEndpoints();
             app.MapViewMyOrdersEndpoints();
 
+            // Check if product exists in active orders (for Catalog Service deletion validation)
+            app.MapGet("/api/orders/check-product/{productId:int}", async (
+                int productId,
+                IBaseRepository<Order> orderRepository) =>
+            {
+                var activeStatuses = new[] { "Delivered", "Cancelled" };
+                var activeOrderCount = await orderRepository.GetAll()
+                    .Include(o => o.Items)
+                    .Where(o => !activeStatuses.Contains(o.Status))
+                    .Where(o => o.Items.Any(i => i.ProductId == productId))
+                    .CountAsync();
+
+                return Results.Ok(new
+                {
+                    Success = true,
+                    HasActiveOrders = activeOrderCount > 0,
+                    ActiveOrderCount = activeOrderCount,
+                    Message = activeOrderCount > 0
+                        ? $"Product is in {activeOrderCount} active order(s)"
+                        : "Product is not in any active orders"
+                });
+            });
+
             // ✅ MERGED CART ENDPOINTS
             app.MapAddToCartEndpoints();
             app.MapCheckoutEndpoints();
@@ -184,18 +235,7 @@ namespace Ordering_Service
             app.MapUpdateCartItemEndpoints();
             // ...
 
-            // ✅ MERGED DELIVERY ENDPOINTS
-            app.MapCreateAddressEndpoints();
-            app.MapDeleteAddressEndpoints();
-            app.MapGetUserAddressesEndpoints();
-            app.MapSetDefaultAddressEndpoints();
-            app.MapUpdateAddressEndpoints();
 
-            app.MapCreateShipmentEndpoints();
-            app.MapGetDeliveryTrackingEndpoints();
-            app.MapGetShipmentDetailsEndpoints();
-            app.MapUpdateDriverLocationEndpoints();
-            app.MapUpdateShipmentStatusEndpoints();
 
             app.MapGet("/", () => "Ordering Service is running...");
             await app.RunAsync();

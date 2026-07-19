@@ -100,8 +100,25 @@ namespace Payment_Service.Features.ProcessPayment
             })
             .WithName("GetPaymentByOrder")
             .WithOpenApi();
+
+            // Confirm COD Payment (Human confirmation on delivery)
+            group.MapPut("/{id:int}/confirm-cod", async (
+                int id,
+                IMediator mediator) =>
+            {
+                var command = new ConfirmCodCommand(id);
+                var result = await mediator.Send(command);
+                return result.Success
+                    ? Results.Ok(new { success = true, message = "COD Payment confirmed successfully" })
+                    : Results.BadRequest(new { success = false, error = result.ErrorMessage });
+            })
+            .WithName("ConfirmCodPayment")
+            .WithOpenApi();
         }
     }
+
+    public record ConfirmCodCommand(int PaymentId) : IRequest<ConfirmCodResponse>;
+    public record ConfirmCodResponse(bool Success, string? ErrorMessage = null);
 
     // Request DTOs
     public record CreatePaymentIntentRequest(

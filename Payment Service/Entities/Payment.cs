@@ -34,6 +34,14 @@ namespace Payment_Service.Entities
         public bool IsRefunded { get; set; }
         public decimal? RefundedAmount { get; set; }
         public DateTime? RefundedAt { get; set; }
+
+        // Order Metadata for Event Propagation
+        public int DeliveryAddressId { get; set; }
+        public bool IsGift { get; set; }
+        public string? RecipientName { get; set; }
+        public string? RecipientPhone { get; set; }
+        public string? GiftMessage { get; set; }
+        public string? ItemsJson { get; set; }
     }
 
     public enum PaymentStatus

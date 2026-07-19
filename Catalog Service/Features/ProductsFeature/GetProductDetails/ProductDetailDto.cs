@@ -1,4 +1,4 @@
-﻿namespace Catalog_Service.Features.ProductsFeature.GetProductDetails
+namespace Catalog_Service.Features.ProductsFeature.GetProductDetails
 {
     public class ProductDetailDto
     {
@@ -13,6 +13,7 @@
         public decimal FinalPrice => (DiscountedPrice ?? Price) + Tax;
 
         public bool InStock { get; set; }
+        public bool IsAvailable { get; set; }
         public int StockQuantity { get; set; }
         public string? BrandName { get; set; }
         public string CategoryName { get; set; }

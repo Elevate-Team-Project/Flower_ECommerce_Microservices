@@ -156,7 +156,8 @@ namespace Catalog_Service
                 builder.Services.AddMassTransit(x =>
                 {
                     // Add Consumers here
-                    x.AddConsumer<Catalog_Service.Features.ProductsFeature.StockManagement.OrderDeliveredConsumer>();
+                    x.AddConsumer<Catalog_Service.Features.ProductsFeature.StockManagement.PaymentSucceededConsumer>();
+                    x.AddConsumer<Catalog_Service.Features.ProductsFeature.StockManagement.CodOrderApprovedConsumer>();
                     x.AddConsumer<Catalog_Service.Features.ProductsFeature.StockManagement.PaymentFailedConsumer>();
                     x.AddConsumer<Catalog_Service.Features.ProductsFeature.StockManagement.OrderCancelledConsumer>();
                     x.AddConsumer<Catalog_Service.Features.ProductsFeature.OfferExpiredConsumer>();
@@ -223,6 +224,13 @@ namespace Catalog_Service
                 // Add gRPC service
                 builder.Services.AddGrpc();
 
+                // Add HTTP Client for Ordering Service
+                builder.Services.AddHttpClient("OrderingService", client =>
+                {
+                    var orderingUrl = config["ServiceClients:OrderingServiceUrl"] ?? "http://orderingservice:8080/";
+                    client.BaseAddress = new Uri(orderingUrl);
+                });
+
                 // Add gRPC client for Ordering Service (US-A11: Check product in active orders)
                 builder.Services.AddGrpcClient<BuildingBlocks.Grpc.OrderingGrpc.OrderingGrpcClient>(options =>
                 {
@@ -275,8 +283,8 @@ namespace Catalog_Service
                     try
                     {
                         var context = services.GetRequiredService<ApplicationDbContext>();
-                        //await context.Database.MigrateAsync();
-                        //await DatabaseSeeder.SeedAsync(services);
+                        await context.Database.MigrateAsync();
+                        await DatabaseSeeder.SeedAsync(services);
                     }
                     catch (Exception ex)
                     {
@@ -306,38 +314,7 @@ namespace Catalog_Service
                 app.UseAuthorization();
                 app.MapAllEndpoints();
                 app.MapGet("/", () => "Catalog Service is running...");
-                // Map Endpoints - Offers
-                app.MapCreateOfferEndpoints();
-                app.MapGetAllOffersEndpoints();
-                app.MapGetOfferByIdEndpoints();
-                app.MapUpdateOfferEndpoints();
-                app.MapDeleteOfferEndpoints();
-                app.MapGetActiveOffersEndpoints();
 
-                // Map Endpoints - Coupons
-                app.MapCreateCouponEndpoints();
-                app.MapGetAllCouponsEndpoints();
-                app.MapValidateCouponEndpoints();
-                app.MapApplyCouponEndpoints();
-                app.MapCouponHistoryEndpoints();
-
-                // Map Endpoints - Loyalty
-                app.MapLoyaltyBalanceEndpoints();
-                app.MapLoyaltyTiersEndpoints();
-                app.MapLoyaltyTransactionsEndpoints();
-                app.MapRedeemPointsEndpoints();
-
-                // Map Endpoints - Registration Codes
-                app.MapCreateRegistrationCodeEndpoints();
-                app.MapValidateRegistrationCodeEndpoints();
-                app.MapApplyRegistrationCodeEndpoints();
-
-                // Map Endpoints - Banners
-                app.MapCreateBannerEndpoints();
-                app.MapDeleteBannerEndpoints();
-                app.MapGetActiveBannersEndpoints();
-                app.MapGetAllBannersEndpoints();
-                app.MapUpdateBannerEndpoints();
 
                 // Map gRPC service
                 app.MapGrpcService<CatalogGrpcService>();

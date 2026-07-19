@@ -171,13 +171,23 @@ namespace Payment_Service.Features.ProcessPayment
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 // Publish success event
+                var items = string.IsNullOrEmpty(payment.ItemsJson)
+                    ? new List<PaymentSucceededItemDto>()
+                    : System.Text.Json.JsonSerializer.Deserialize<List<PaymentSucceededItemDto>>(payment.ItemsJson) ?? new();
+
                 await _publishEndpoint.Publish(new PaymentSucceededEvent(
                     payment.OrderId,
                     payment.UserId,
                     payment.Amount,
                     payment.StripePaymentIntentId!,
                     payment.PaymentMethod,
-                    payment.PaidAt.Value
+                    payment.PaidAt.Value,
+                    payment.DeliveryAddressId,
+                    payment.IsGift,
+                    payment.RecipientName,
+                    payment.RecipientPhone,
+                    payment.GiftMessage,
+                    items
                 ), cancellationToken);
 
                 _logger.LogInformation(
@@ -203,9 +213,6 @@ namespace Payment_Service.Features.ProcessPayment
                 _paymentRepository.Update(payment);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                // Note: PaymentFailedEvent should include order items for stock restoration
-                // This would need to be passed from the caller or fetched via gRPC
-                // For now, publish without items - Ordering Service will handle stock
                 _logger.LogWarning(
                     "Payment failed for Order {OrderId}: {Error}",
                     request.OrderId, confirmResult.ErrorMessage);
@@ -220,6 +227,54 @@ namespace Payment_Service.Features.ProcessPayment
                     ErrorMessage: confirmResult.ErrorMessage
                 );
             }
+        }
+    }
+
+    /// <summary>
+    /// Handler to confirm COD cash collection on delivery.
+    /// </summary>
+    public class ConfirmCodHandler : IRequestHandler<ConfirmCodCommand, ConfirmCodResponse>
+    {
+        private readonly IBaseRepository<Payment> _paymentRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly ILogger<ConfirmCodHandler> _logger;
+
+        public ConfirmCodHandler(
+            IBaseRepository<Payment> paymentRepository,
+            IUnitOfWork unitOfWork,
+            ILogger<ConfirmCodHandler> logger)
+        {
+            _paymentRepository = paymentRepository;
+            _unitOfWork = unitOfWork;
+            _logger = logger;
+        }
+
+        public async Task<ConfirmCodResponse> Handle(ConfirmCodCommand request, CancellationToken cancellationToken)
+        {
+            var payment = await _paymentRepository.GetByIdAsync(request.PaymentId);
+            if (payment == null)
+            {
+                return new ConfirmCodResponse(false, "Payment record not found");
+            }
+
+            if (!payment.PaymentMethod.Equals("CashOnDelivery", StringComparison.OrdinalIgnoreCase))
+            {
+                return new ConfirmCodResponse(false, "Payment method is not Cash on Delivery");
+            }
+
+            if (payment.Status == PaymentStatus.Succeeded)
+            {
+                return new ConfirmCodResponse(false, "Payment already succeeded");
+            }
+
+            payment.Status = PaymentStatus.Succeeded;
+            payment.PaidAt = DateTime.UtcNow;
+
+            _paymentRepository.Update(payment);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Manually confirmed COD Payment collection for Payment: {PaymentId}", payment.Id);
+            return new ConfirmCodResponse(true);
         }
     }
 }

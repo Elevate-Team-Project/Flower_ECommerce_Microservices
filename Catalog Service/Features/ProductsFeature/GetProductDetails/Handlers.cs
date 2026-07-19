@@ -1,4 +1,4 @@
-﻿using BuildingBlocks.Interfaces;
+using BuildingBlocks.Interfaces;
 using Catalog_Service.Entities;
 using Catalog_Service.Features.Shared;
 using MediatR;
@@ -46,6 +46,7 @@ namespace Catalog_Service.Features.ProductsFeature.GetProductDetails
                 Tax = tax,
                 StockQuantity = product.StockQuantity,
                 InStock = product.StockQuantity > 0 && product.IsAvailable,
+                IsAvailable = product.IsAvailable,
                 BrandName = product.Brand?.Name,
                 CategoryName = product.Category.Name,
                 Images = product.Images

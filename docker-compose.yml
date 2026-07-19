@@ -100,6 +100,7 @@ services:
       - catalogservice
       - orderingservice
       - paymentservice
+      - deliveryservice
     networks:
       - flower_network
 
@@ -147,6 +148,7 @@ services:
       - RabbitMq__Password=guest
       - Redis__Url=redis:6379
       - GrpcServices__OrderingServiceUrl=http://orderingservice:8081
+      - ServiceClients__OrderingServiceUrl=http://orderingservice:8080/
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -180,6 +182,7 @@ services:
       - RabbitMq__Password=guest
       - Redis__Url=redis:6379
       - GrpcServices__CatalogServiceUrl=http://catalogservice:8081
+      - ServiceClients__CatalogServiceUrl=http://catalogservice:8080/
     depends_on:
       sqlserver:
         condition: service_healthy
@@ -220,6 +223,32 @@ services:
         condition: service_started
     networks:
       - flower_network
+
+  # ==========================================
+  # SERVICE 7: Delivery Service
+  # Host Port: 8098
+  # ==========================================
+  deliveryservice:
+    image: ${DOCKER_REGISTRY-}deliveryservice
+    build:
+      context: .
+      dockerfile: "Delivery Service/Dockerfile"
+    ports:
+      - "8098:8080"
+      - "8099:8081"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=DeliveryDb;User Id=sa;Password=MyComplexP@ssw0rd2025;TrustServerCertificate=True;
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=guest
+      - RabbitMQ__Password=guest
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - flower_network
+
 
   # ==========================================
   # SERVICE 9: Notification Service

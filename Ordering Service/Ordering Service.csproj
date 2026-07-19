@@ -46,13 +46,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Server: expose Ordering gRPC service -->
-    <Protobuf Include="..\BuildingBlocks\Protos\ordering.proto" GrpcServices="Server" Link="Protos\ordering.proto" />
-    <!-- Client: consume Catalog gRPC service -->
-    <Protobuf Include="..\BuildingBlocks\Protos\catalog.proto" GrpcServices="Client" Link="Protos\catalog.proto" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Contracts\" />
   </ItemGroup>
 

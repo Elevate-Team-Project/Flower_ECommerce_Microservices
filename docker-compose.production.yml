@@ -167,6 +167,7 @@ services:
       - RabbitMq__Password=${RABBITMQ_PASSWORD:-g19HBzycmCfePY6MREFm}
       - Redis__Url=${REDIS_HOST:-72.61.102.216}:${REDIS_PORT:-6379},password=${REDIS_PASSWORD:-g19HBzycmCfePY6MREFm}
       - GrpcServices__OrderingServiceUrl=http://orderingservice:8081
+      - ServiceClients__OrderingServiceUrl=http://orderingservice:8080/
 
   # ============================================
   # CART SERVICE
@@ -257,6 +258,7 @@ services:
       - RabbitMq__Username=${RABBITMQ_USERNAME:-admin}
       - RabbitMq__Password=${RABBITMQ_PASSWORD:-g19HBzycmCfePY6MREFm}
       - GrpcServices__CatalogServiceUrl=http://catalogservice:8081
+      - ServiceClients__CatalogServiceUrl=http://catalogservice:8080/
     depends_on:
       - cartservice
       - catalogservice

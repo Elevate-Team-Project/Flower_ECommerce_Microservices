@@ -1,10 +1,11 @@
-using BuildingBlocks.Grpc;
 using BuildingBlocks.Interfaces;
 using Ordering_Service.Entities;
 using Ordering_Service.Features.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Ordering_Service.Infrastructure.Data;
+using System.Net.Http;
+using System.Net.Http.Json;
 
 namespace Ordering_Service.Features.Cart.AddToCart
 {
@@ -13,20 +14,20 @@ namespace Ordering_Service.Features.Cart.AddToCart
         private readonly IBaseRepository<Entities.Cart> _cartRepository;
         private readonly IBaseRepository<CartItem> _cartItemRepository;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly CatalogGrpc.CatalogGrpcClient _catalogClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<AddToCartHandler> _logger;
 
         public AddToCartHandler(
             IBaseRepository<Entities.Cart> cartRepository,
             IBaseRepository<CartItem> cartItemRepository,
             IUnitOfWork unitOfWork,
-            CatalogGrpc.CatalogGrpcClient catalogClient,
+            IHttpClientFactory httpClientFactory,
             ILogger<AddToCartHandler> logger)
         {
             _cartRepository = cartRepository;
             _cartItemRepository = cartItemRepository;
             _unitOfWork = unitOfWork;
-            _catalogClient = catalogClient;
+            _httpClientFactory = httpClientFactory;
             _logger = logger;
         }
 
@@ -37,28 +38,30 @@ namespace Ordering_Service.Features.Cart.AddToCart
             if (request.Quantity <= 0)
                 return EndpointResponse<CartItemDto>.ErrorResponse("Quantity must be greater than 0");
 
-            // Validate product via gRPC
-            ProductResponse productResponse;
+            // Validate product via HTTP
+            CatalogProductDto product;
             try
             {
-                productResponse = await _catalogClient.GetProductAsync(
-                    new GetProductRequest { ProductId = request.ProductId },
-                    cancellationToken: cancellationToken);
+                var httpClient = _httpClientFactory.CreateClient("CatalogService");
+                var response = await httpClient.GetAsync($"api/products/{request.ProductId}", cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return EndpointResponse<CartItemDto>.NotFoundResponse("Product not found");
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<EndpointResponse<CatalogProductDto>>(cancellationToken: cancellationToken);
+                if (result == null || !result.IsSuccess || result.Data == null)
+                {
+                    return EndpointResponse<CartItemDto>.NotFoundResponse(result?.Message ?? "Product not found");
+                }
+                product = result.Data;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to call Catalog gRPC service");
+                _logger.LogError(ex, "Failed to call Catalog HTTP service");
                 return EndpointResponse<CartItemDto>.ErrorResponse(
                     "Failed to validate product. Please try again.", 503);
             }
-
-            if (!productResponse.Success || productResponse.Product == null)
-            {
-                return EndpointResponse<CartItemDto>.NotFoundResponse(
-                    productResponse.ErrorMessage ?? "Product not found");
-            }
-
-            var product = productResponse.Product;
 
             if (!product.IsAvailable)
                 return EndpointResponse<CartItemDto>.ErrorResponse("Product is not available");
@@ -84,8 +87,8 @@ namespace Ordering_Service.Features.Cart.AddToCart
 
             // Calculate price (use discounted price if available)
             var unitPrice = product.HasDiscount 
-                ? (decimal)product.DiscountedPrice 
-                : (decimal)product.Price;
+                ? product.DiscountedPrice.Value 
+                : product.Price;
 
             if (existingItem != null)
             {

@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Catalog_Service.Entities;
 using Microsoft.EntityFrameworkCore;
 using Catalog_Service.Features.Shared;
+using System.Net.Http;
+using System.Net.Http.Json;
 
 namespace Catalog_Service.Features.ProductsFeature.DeleteProduct
 {
@@ -15,18 +17,18 @@ namespace Catalog_Service.Features.ProductsFeature.DeleteProduct
     {
         private readonly IBaseRepository<Product> _productRepo;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly BuildingBlocks.Grpc.OrderingGrpc.OrderingGrpcClient _orderingGrpcClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<DeleteProductHandler> _logger;
 
         public DeleteProductHandler(
             IBaseRepository<Product> productRepo, 
             IUnitOfWork unitOfWork,
-            BuildingBlocks.Grpc.OrderingGrpc.OrderingGrpcClient orderingGrpcClient,
+            IHttpClientFactory httpClientFactory,
             ILogger<DeleteProductHandler> logger)
         {
             _productRepo = productRepo;
             _unitOfWork = unitOfWork;
-            _orderingGrpcClient = orderingGrpcClient;
+            _httpClientFactory = httpClientFactory;
             _logger = logger;
         }
 
@@ -45,20 +47,22 @@ namespace Catalog_Service.Features.ProductsFeature.DeleteProduct
             // US-A11: Check if product is part of any active order before deletion
             try
             {
-                var checkResult = await _orderingGrpcClient.CheckProductInActiveOrdersAsync(
-                    new BuildingBlocks.Grpc.CheckProductRequest { ProductId = request.Id },
-                    cancellationToken: cancellationToken);
-
-                if (checkResult.HasActiveOrders)
+                var httpClient = _httpClientFactory.CreateClient("OrderingService");
+                var response = await httpClient.GetAsync($"api/orders/check-product/{request.Id}", cancellationToken);
+                if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning(
-                        "Attempted to delete product {ProductId} which is in {Count} active orders",
-                        request.Id, checkResult.ActiveOrderCount);
+                    var checkResult = await response.Content.ReadFromJsonAsync<ActiveOrderCheckResponse>(cancellationToken: cancellationToken);
+                    if (checkResult != null && checkResult.HasActiveOrders)
+                    {
+                        _logger.LogWarning(
+                            "Attempted to delete product {ProductId} which is in {Count} active orders",
+                            request.Id, checkResult.ActiveOrderCount);
 
-                    return EndpointResponse<bool>.ErrorResponse(
-                        $"Cannot delete product. It is part of {checkResult.ActiveOrderCount} active order(s). " +
-                        "Please wait until all orders containing this product are delivered or cancelled.",
-                        400);
+                        return EndpointResponse<bool>.ErrorResponse(
+                            $"Cannot delete product. It is part of {checkResult.ActiveOrderCount} active order(s). " +
+                            "Please wait until all orders containing this product are delivered or cancelled.",
+                            400);
+                    }
                 }
             }
             catch (Exception ex)
@@ -74,6 +78,14 @@ namespace Catalog_Service.Features.ProductsFeature.DeleteProduct
 
             _logger.LogInformation("Product {ProductId} deleted successfully", request.Id);
             return EndpointResponse<bool>.SuccessResponse(true, "Product deleted successfully");
+        }
+
+        private class ActiveOrderCheckResponse
+        {
+            public bool Success { get; set; }
+            public bool HasActiveOrders { get; set; }
+            public int ActiveOrderCount { get; set; }
+            public string Message { get; set; } = string.Empty;
         }
     }
 
