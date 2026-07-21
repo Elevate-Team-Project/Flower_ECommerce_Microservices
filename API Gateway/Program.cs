@@ -1,3 +1,8 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+
 namespace API_Gateway
 {
     public class Program
@@ -5,6 +10,35 @@ namespace API_Gateway
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // ============================================
+            // JWT Authentication & Authorization Setup
+            // ============================================
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "FlowerEcommerceAuthSystem",
+                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? "FlowerEcommerceAuthClient",
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "My$up3rS3cr3tKey_2025@ExamSystem!"))
+                };
+            });
+
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("authenticated", policy =>
+                    policy.RequireAuthenticatedUser());
+            });
 
             // ============================================
             // YARP Reverse Proxy Configuration
@@ -36,11 +70,36 @@ namespace API_Gateway
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                c.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = "Flower E-Commerce API Gateway",
                     Version = "v1",
                     Description = "Unified entry point for all Flower E-Commerce microservices"
+                });
+
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Enter JWT Bearer token into field (e.g. 'Bearer {token}')",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
                 });
             });
 
@@ -52,6 +111,10 @@ namespace API_Gateway
             
             // CORS must be first
             app.UseCors("GatewayPolicy");
+
+            // Authentication & Authorization (YARP uses these for Route AuthorizationPolicy)
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             // Health check endpoint
             app.MapHealthChecks("/health");
@@ -77,7 +140,7 @@ namespace API_Gateway
             app.MapReverseProxy();
 
             Console.WriteLine("🌸 [Gateway] Flower E-Commerce API Gateway is starting...");
-            Console.WriteLine("📡 [Gateway] Routing requests to downstream microservices");
+            Console.WriteLine("📡 [Gateway] Routing requests with YARP JWT Token Validation enabled");
 
             app.Run();
         }
