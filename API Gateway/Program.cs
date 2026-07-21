@@ -1,16 +1,50 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using Ocelot.DependencyInjection;
+using Ocelot.Middleware;
+
 namespace API_Gateway
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Add Ocelot configuration file
+            builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
+
             // ============================================
-            // YARP Reverse Proxy Configuration
+            // JWT Authentication & Authorization Setup
             // ============================================
-            builder.Services.AddReverseProxy()
-                .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer("Bearer", options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "FlowerEcommerceAuthSystem",
+                    ValidAudience = builder.Configuration["Jwt:Audience"] ?? "FlowerEcommerceAuthClient",
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "My$up3rS3cr3tKey_2025@ExamSystem!"))
+                };
+            });
+
+            builder.Services.AddAuthorization();
+
+            // ============================================
+            // Ocelot Gateway Configuration
+            // ============================================
+            builder.Services.AddOcelot(builder.Configuration);
 
             // ============================================
             // CORS Configuration
@@ -36,11 +70,36 @@ namespace API_Gateway
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                c.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Title = "Flower E-Commerce API Gateway",
+                    Title = "Flower E-Commerce API Gateway (Ocelot)",
                     Version = "v1",
-                    Description = "Unified entry point for all Flower E-Commerce microservices"
+                    Description = "Unified Ocelot entry point for all Flower E-Commerce microservices"
+                });
+
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Enter JWT Bearer token into field (e.g. 'Bearer {token}')",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
                 });
             });
 
@@ -59,7 +118,7 @@ namespace API_Gateway
             // Gateway info endpoint
             app.MapGet("/", () => Results.Ok(new
             {
-                Service = "Flower E-Commerce API Gateway",
+                Service = "Flower E-Commerce API Gateway (Ocelot)",
                 Version = "1.0.0",
                 Status = "Running",
                 Timestamp = DateTime.UtcNow
@@ -73,13 +132,16 @@ namespace API_Gateway
                 c.RoutePrefix = "swagger";
             });
 
-            // YARP Reverse Proxy - routes all /api/* requests to downstream services
-            app.MapReverseProxy();
+            app.UseAuthentication();
+            app.UseAuthorization();
 
-            Console.WriteLine("🌸 [Gateway] Flower E-Commerce API Gateway is starting...");
-            Console.WriteLine("📡 [Gateway] Routing requests to downstream microservices");
+            Console.WriteLine("🌸 [Gateway] Flower E-Commerce Ocelot API Gateway is starting...");
+            Console.WriteLine("📡 [Gateway] Routing requests to downstream microservices via Ocelot");
 
-            app.Run();
+            // Ocelot Reverse Proxy Middleware
+            await app.UseOcelot();
+
+            await app.RunAsync();
         }
     }
 }
