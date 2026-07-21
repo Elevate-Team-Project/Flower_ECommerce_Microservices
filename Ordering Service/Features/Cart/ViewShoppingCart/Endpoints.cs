@@ -1,6 +1,7 @@
 using Ordering_Service.Features.Cart.ViewShoppingCart.VM;
 using Ordering_Service.Features.Shared;
 using MediatR;
+using BuildingBlocks.Extensions;
 
 namespace Ordering_Service.Features.Cart.ViewShoppingCart
 {
@@ -12,7 +13,7 @@ namespace Ordering_Service.Features.Cart.ViewShoppingCart
                 HttpContext httpContext,
                 IMediator mediator) =>
             {
-                var userId = httpContext.User.Identity?.Name ?? "test-user";
+                var userId = httpContext.GetUserId();
 
                 var result = await mediator.Send(new ViewCartQuery(userId));
 

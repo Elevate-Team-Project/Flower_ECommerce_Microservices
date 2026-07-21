@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,5 +15,8 @@ namespace BuildingBlocks.Interfaces
         Task BeginTransactionAsync();
         Task CommitTransactionAsync();
         Task RollbackTransactionAsync();
+
+        Task ExecuteAsync(Func<Task> action);
+        Task<TResult> ExecuteAsync<TResult>(Func<Task<TResult>> action);
     }
 }

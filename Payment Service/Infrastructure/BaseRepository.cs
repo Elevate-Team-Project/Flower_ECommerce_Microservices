@@ -59,9 +59,21 @@ namespace Payment_Service.Infrastructure
 
         public void SaveInclude(T entity, params string[] includedProperties)
         {
-            var entry = _context.Entry(entity);
-            entry.State = EntityState.Unchanged;
-            
+            var local = _dbSet.Local
+                .FirstOrDefault(e => _context.Entry(e).Property("Id").CurrentValue!
+                                     .Equals(_context.Entry(entity).Property("Id").CurrentValue));
+
+            Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<T> entry;
+
+            if (local == null)
+            {
+                entry = _context.Attach(entity);
+            }
+            else
+            {
+                entry = _context.Entry(local);
+            }
+
             foreach (var property in includedProperties)
             {
                 entry.Property(property).IsModified = true;

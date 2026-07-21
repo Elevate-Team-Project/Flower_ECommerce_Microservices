@@ -85,6 +85,7 @@ namespace Ordering_Service.Consumers
 
             var order = new Order
             {
+                OrderNumber = msg.OrderNumber,
                 UserId = msg.UserId,
                 CouponCode = msg.CouponCode,
                 SubTotal = msg.SubTotal,
@@ -107,12 +108,13 @@ namespace Ordering_Service.Consumers
             await _orderRepository.AddAsync(order);
             await _unitOfWork.SaveChangesAsync(context.CancellationToken);
 
-            _logger.LogInformation("Successfully saved checkout Order: {OrderId} for user: {UserId}", order.Id, msg.UserId);
+            _logger.LogInformation("Successfully saved checkout Order: {OrderId} ({OrderNumber}) for user: {UserId}", order.Id, order.OrderNumber, msg.UserId);
 
             // Publish OrderPlacedEvent to RabbitMQ
             var orderPlaced = new OrderPlacedEvent
             {
                 OrderId = order.Id,
+                OrderNumber = order.OrderNumber,
                 UserId = order.UserId,
                 TotalAmount = order.TotalAmount,
                 PaymentMethod = order.PaymentMethod,

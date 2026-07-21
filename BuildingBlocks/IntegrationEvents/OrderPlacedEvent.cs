@@ -6,6 +6,7 @@ namespace BuildingBlocks.IntegrationEvents
     public class OrderPlacedEvent
     {
         public int OrderId { get; set; }
+        public string OrderNumber { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
         public string PaymentMethod { get; set; } = string.Empty;

@@ -139,10 +139,14 @@ namespace Ordering_Service.Features.Cart.Checkout
 
             var totalAmount = subTotal + DELIVERY_FEE - discountAmount;
 
+            // Generate unique order number
+            var orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
+
             // Create order event to be consumed by Ordering Service
             var orderEvent = new CartCheckoutEvent
             {
                 UserId = request.UserId,
+                OrderNumber = orderNumber,
                 Items = cart.Items.Select(i => new CartCheckoutItemDto
                 {
                     ProductId = i.ProductId,
@@ -183,9 +187,6 @@ namespace Ordering_Service.Features.Cart.Checkout
             _logger.LogInformation(
                 "Checkout completed for user {UserId}. Total: {Total}",
                 request.UserId, totalAmount);
-
-            // Generate unique order number
-            var orderNumber = $"ORD-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString()[..8].ToUpper()}";
 
             var result = new CheckoutResultDto(
                 OrderId: 0, 

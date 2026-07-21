@@ -1,5 +1,6 @@
-﻿using MediatR;
+using MediatR;
 using Ordering_Service.Features.Shared;
+using BuildingBlocks.Extensions;
 
 namespace Ordering_Service.Features.Orders.ViewMyOrders
 {
@@ -12,7 +13,7 @@ namespace Ordering_Service.Features.Orders.ViewMyOrders
                 string? status,
                 IMediator mediator) =>
             {
-                var userId = context.User.Identity?.Name ?? "test-user";
+                var userId = context.GetUserId();
 
 
                 if (string.IsNullOrEmpty(userId))

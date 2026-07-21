@@ -4,6 +4,7 @@ namespace Ordering_Service.Entities
 {
     public class Order : BaseEntity
     {
+        public string OrderNumber { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
         public string? CouponCode { get; set; }
         public decimal SubTotal { get; set; }

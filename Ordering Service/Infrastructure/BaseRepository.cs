@@ -54,33 +54,24 @@ namespace Ordering_Service.Infrastructure
 
         public void SaveInclude(T entity, params string[] includedProperties)
         {
-            var LocalEntity = _dbSet.Local.FirstOrDefault(e => e.Id == entity.Id);
-            EntityEntry entry;
+            var local = _dbSet.Local
+                .FirstOrDefault(e => _context.Entry(e).Property("Id").CurrentValue!
+                                     .Equals(_context.Entry(entity).Property("Id").CurrentValue));
 
-            if (LocalEntity == null)
+            Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<T> entry;
+
+            if (local == null)
             {
-                entry = _context.Entry(entity);
+                entry = _context.Attach(entity);
             }
             else
             {
-                entry = _context.ChangeTracker.Entries<T>().First(e => e.Entity.Id == entity.Id);
+                entry = _context.Entry(local);
             }
 
-            foreach (var property in entry.Properties)
+            foreach (var property in includedProperties)
             {
-                if (property.Metadata.IsPrimaryKey())
-                    continue;
-                else
-                {
-                    if (includedProperties.Contains(property.Metadata.Name))
-                    {
-                        property.IsModified = true;
-                    }
-                    else
-                    {
-                        property.IsModified = false;
-                    }
-                }
+                entry.Property(property).IsModified = true;
             }
         }
 

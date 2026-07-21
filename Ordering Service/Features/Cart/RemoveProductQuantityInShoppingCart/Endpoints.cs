@@ -1,6 +1,6 @@
 using Ordering_Service.Features.Shared;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
+using BuildingBlocks.Extensions;
 
 namespace Ordering_Service.Features.Cart.RemoveProductQuantityInShoppingCart
 {
@@ -14,7 +14,7 @@ namespace Ordering_Service.Features.Cart.RemoveProductQuantityInShoppingCart
                 HttpContext context,
                 IMediator mediator) =>
             {
-                var userId = context.User.Identity?.Name ?? "test-user";
+                var userId = context.GetUserId();
 
                 var result = await mediator.Send(
                     new DecreaseCartItemCommand(userId, productId, quantity)

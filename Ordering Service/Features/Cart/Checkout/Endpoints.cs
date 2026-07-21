@@ -1,5 +1,6 @@
 using MediatR;
 using Ordering_Service.Features.Shared;
+using BuildingBlocks.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Ordering_Service.Features.Cart.Checkout
@@ -13,7 +14,7 @@ namespace Ordering_Service.Features.Cart.Checkout
                 HttpContext context,
                 IMediator mediator) =>
             {
-                var userId = context.User.Identity?.Name ?? "anonymous";
+                var userId = context.GetUserId();
 
                 var command = new CheckoutCommand(
                     userId,

@@ -39,6 +39,12 @@ namespace Notification_Service
                 x.AddConsumer<OrderStatusChangedConsumer>();
                 x.AddConsumer<OfferCreatedConsumer>();
 
+                x.AddEntityFrameworkOutbox<NotificationDbContext>(o =>
+                {
+                    o.UseSqlServer();
+                    o.UseBusOutbox();
+                });
+
                 x.UsingRabbitMq((context, cfg) =>
                 {
                     var rabbitMqHost = builder.Configuration["RabbitMq:Host"] ?? "localhost";

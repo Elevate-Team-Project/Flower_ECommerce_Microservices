@@ -1,6 +1,6 @@
 using Ordering_Service.Features.Shared;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
+using BuildingBlocks.Extensions;
 
 namespace Ordering_Service.Features.Cart.RemoveCartItem
 {
@@ -13,7 +13,7 @@ namespace Ordering_Service.Features.Cart.RemoveCartItem
                 HttpContext context,
                 IMediator mediator) =>
             {
-                var userId = context.User.Identity?.Name ?? "anonymous";
+                var userId = context.GetUserId();
 
                 var result = await mediator.Send(new RemoveCartItemCommand(userId, productId));
 

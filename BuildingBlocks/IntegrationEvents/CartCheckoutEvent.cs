@@ -6,6 +6,7 @@ namespace BuildingBlocks.IntegrationEvents
     public class CartCheckoutEvent
     {
         public string UserId { get; set; } = string.Empty;
+        public string OrderNumber { get; set; } = string.Empty;
         public List<CartCheckoutItemDto> Items { get; set; } = new();
         public int? DeliveryAddressId { get; set; }
         public string? ShippingAddress { get; set; }
